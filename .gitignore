@@ -151,4 +151,4 @@ dmypy.json
 # directories with temporary files
 **/tmp_files/*
 
-dingo-venv/
+dingo-et-venv/

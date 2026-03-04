@@ -53,7 +53,7 @@ model:
 # The first stage (and only) stage of training. 
 training:
   stage_0:
-    epochs: 20
+    epochs: 1
     asd_dataset_path: training_data/asd_dataset/asds_O1.hdf5  # this should just contain a single fiducial ASD per detector for pretraining
     freeze_rb_layer: True
     optimizer:
