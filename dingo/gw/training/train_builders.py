@@ -104,7 +104,26 @@ def set_train_transforms(wfd, data_settings, asd_dataset_path, omit_transforms=N
 
     ref_time = data_settings["ref_time"]
     # Build detector objects
-    ifo_list = InterferometerList(data_settings["detectors"])
+    #####################################################################################################
+    #ifo_list = InterferometerList(data_settings["detectors"]) # This is the old way of building the ifo list, which relies on bilby's built-in interferometer list. This is fine for standard detectors, but it does not allow for custom detectors, such as those with different f_min and f_max values. The new way of building the ifo list is to build it based on the domain of the waveform dataset, which ensures that the ifo list is consistent with the waveforms. This also allows for custom detectors to be easily incorporated.
+    et_detectors = [d for d in data_settings["detectors"] if d.startswith('ET-')]
+    other_detectors = [d for d in data_settings["detectors"] if not d.startswith('ET-')]
+
+    if len(et_detectors) > 0:
+        full_triangle = InterferometerList(['ET-'])  # loads all 3
+        # pick only the ones requested
+        selected = [ifo for ifo in full_triangle if ifo.name in et_detectors]
+        ifo_list = InterferometerList([]) 
+        for ifo in selected:
+            ifo_list.append(ifo)
+        for name in other_detectors:
+            ifo_list.append(get_empty_interferometer(name))
+    else:
+        ifo_list = InterferometerList(data_settings["detectors"])
+    #####################################################################################################
+
+
+
 
     # Build transforms.
     transforms = [
@@ -261,7 +280,9 @@ def build_svd_for_embedding_network(
     print("Generating waveforms for embedding network SVD initialization.")
     time_start = time.time()
     ifos = list(wfd[0]["waveform"].keys())
+    print('FS: ifos = ', ifos)
     waveform_len = len(wfd[0]["waveform"][ifos[0]])
+    print('FS: waveform_len = ', ifos)
     num_waveforms = num_training_samples + num_validation_samples
     if num_waveforms > len(wfd):
         raise IndexError(
