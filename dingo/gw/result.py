@@ -560,8 +560,13 @@ class Result(CoreResult):
         # Restrict to samples that are within the prior.
         param_keys = [k for k, v in self.prior.items() if not isinstance(v, Constraint)]
         theta = self.samples[param_keys]
+
+        theta_dict = {k: theta[k].to_numpy() for k in theta.columns}
+        constraints = self.prior.evaluate_constraints(theta_dict)
+
         log_prior = self.prior.ln_prob(theta, axis=0)
-        constraints = self.prior.evaluate_constraints(theta)
+        
+        #constraints = self.prior.evaluate_constraints(theta)
         np.putmask(log_prior, constraints == 0, -np.inf)
         within_prior = np.isfinite(log_prior)
 

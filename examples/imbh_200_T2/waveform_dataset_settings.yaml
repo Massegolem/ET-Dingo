@@ -12,9 +12,9 @@ waveform_generator:
   
 # Dataset only samples over intrinsic parameters. Extrinsic parameters are chosen at train time.
 intrinsic_prior:
-  mass_1: bilby.core.prior.Constraint(minimum=50.0, maximum=1500.0, name='mass_1')
-  mass_2: bilby.core.prior.Constraint(minimum=50.0, maximum=1500.0, name='mass_2')
-  chirp_mass: bilby.gw.prior.UniformInComponentsChirpMass(minimum=100.0, maximum=700.0, name='chirp_mass') #over 700 signals get shorter than 100ms 
+  mass_1: bilby.core.prior.Constraint(minimum=50.0, maximum=600.0, name='mass_1')
+  mass_2: bilby.core.prior.Constraint(minimum=50.0, maximum=600.0, name='mass_2')
+  chirp_mass: bilby.gw.prior.UniformInComponentsChirpMass(minimum=150.0, maximum=200.0, name='chirp_mass') #over 700 signals get shorter than 100ms 
   mass_ratio: bilby.gw.prior.UniformInComponentsMassRatio(minimum=0.2, maximum=1.0, name='mass_ratio')
   phase: default
   chi_1: bilby.gw.prior.AlignedSpin(name='chi_1', a_prior=Uniform(minimum=0, maximum=0.9))
@@ -25,7 +25,7 @@ intrinsic_prior:
   geocent_time: 0.0  # s
 
 # Dataset size
-num_samples: 500000
+num_samples: 400000
 
 # Save a compressed representation of the dataset
 compression:
@@ -35,3 +35,5 @@ compression:
     num_training_samples: 50000
     num_validation_samples: 10000
   whitening: ET_ASD_10km.txt
+
+

@@ -211,25 +211,40 @@ class DataGenerationInput(BilbyDataGenerationInput):
 
     def create_data_dingo_injection(self, args):
         """Adaptation of create_data to use Dingo signal models rather than Bilby.
-
-        First, executes create_data but without any requested injections. This creates
-        a  noise-only dataset.
-
-        Second, calls _inject_dingo_signal to generate the Dingo signal waveform and
-        add it to the noisy data within the interferometers.
+        ...
         """
+        ########################################################################
+        # Collapse exploded ET-1/ET-2/ET-3 detector names to the registered
+        # triangle base name 'ET-' so bilby's InterferometerList picks up the
+        # shape='Triangle' definition and auto-builds all 3 arms. bilby names
+        # the resulting interferometers 'ET-1'/'ET-2'/'ET-3' internally, which
+        # is what _inject_dingo_signal's `signal["waveform"][ifo.name]` lookup
+        # (and psd_dict) expect.
+        original_detectors = list(args.detectors)
+        et_detectors = [d for d in args.detectors if d.startswith('ET-')]
+        other_detectors = [d for d in args.detectors if not d.startswith('ET-')]
+        if len(et_detectors) == 3:
+            args.detectors = ['ET-'] + other_detectors
+            self.detectors = args.detectors
+        ########################################################################
+    
         # Save values of relevant args.
         injection = args.injection
         injection_file = args.injection_file
         injection_dict = args.injection_dict
-
         args.injection = False
         args.injection_file = None
         args.injection_dict = None
-
         # Create noise.
         self.create_data(args)
-
+    
+        ########################################################################
+        # Restore full detector list for downstream bookkeeping (config dump,
+        # logging). The already-constructed self.interferometers is unaffected.
+        args.detectors = original_detectors
+        self.detectors = original_detectors
+        ########################################################################
+    
         # Reset args.
         args.injection = injection
         args.injection_file = injection_file
@@ -237,7 +252,6 @@ class DataGenerationInput(BilbyDataGenerationInput):
         self.injection = args.injection
         self.injection_file = args.injection_file
         self.injection_dict = args.injection_dict
-
         if self.injection:
             self._inject_dingo_signal(args)
 
