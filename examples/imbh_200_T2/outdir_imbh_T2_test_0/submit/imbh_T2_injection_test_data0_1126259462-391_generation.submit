@@ -1,0 +1,25 @@
+universe = vanilla
+executable = /home/tpausch/.conda/envs/ET-DINGO/bin/dingo_pipe_generation
+request_memory = 8.0GB
+request_disk = 5GB
+request_cpus = 1
+initialdir = /home/tpausch/ET-Dingo/examples/imbh_200_T2
+notification = Never
+requirements = 
++WantsGPUNode = True
+should_transfer_files = YES
+transfer_input_files = /home/tpausch/ET-Dingo/examples/imbh_200_T2/outdir_imbh_T2_test/imbh_T2_injection_test_config_complete.ini,/scratch/tpausch/models/imbh_200_T2/model_latest.pt,ET_ASD_10km.txt,ET_ASD_10km.txt,ET_ASD_10km.txt
+transfer_output_files = outdir_imbh_T2_test
+when_to_transfer_output = ON_EXIT_OR_EVICT
+preserve_relative_paths = True
+stream_error = True
+stream_output = True
+log = outdir_imbh_T2_test/log_data_generation/imbh_T2_injection_test_data0_1126259462-391_generation.log
+output = outdir_imbh_T2_test/log_data_generation/imbh_T2_injection_test_data0_1126259462-391_generation.out
+error = outdir_imbh_T2_test/log_data_generation/imbh_T2_injection_test_data0_1126259462-391_generation.err
+priority = 0
+environment = "HDF5_USE_FILE_LOCKING=FAlSE OMP_NUM_THREADS=1 OMP_PROC_BIND=false GWDATAFIND_SERVER=https://datafind.igwn.org"
+MY.flock_local = True
+MY.DESIRED_Sites = "nogrid"
+arguments = $(ARGS)
+queue
