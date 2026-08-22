@@ -1,5 +1,5 @@
 data:
-  waveform_dataset_path: /scratch/tpausch/waveforms/waveform_dataset_T8_imbh1.hdf5  # Contains intrinsic waveforms
+  waveform_dataset_path: $DATA/waveforms/waveform_dataset_T8_imbh.hdf5  # Contains intrinsic waveforms
   train_fraction: 0.95
   domain_update:
     f_min: 6.0
@@ -98,17 +98,17 @@ training:
     freeze_rb_layer: True
     optimizer:
       type: adam
-      lr: 5.0e-5
+      lr: 1.0e-4
     scheduler:
       type: cosine
       T_max: 200
-    batch_size: 4096
+    batch_size: 16384
 
 
 # Local settings for training that have no impact on the final trained network.
 local:
   device: cuda # Change this to 'cuda' for training on a GPU.
-  num_workers: 10  # num_workers >0 does not work on Mac, see https://stackoverflow.com/questions/64772335/pytorch-w-parallelnative-cpp206
+  num_workers: 8  # num_workers >0 does not work on Mac, see https://stackoverflow.com/questions/64772335/pytorch-w-parallelnative-cpp206
   runtime_limits:
     max_time_per_run: 3600000
     max_epochs_per_run: 500
