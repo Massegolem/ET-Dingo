@@ -1,0 +1,414 @@
+True NVIDIA H100
+Beginning new training run.
+Loading dataset from /data/fs201368/tp41139/waveforms/waveform_dataset_T8_imbh.hdf5.
+Omitting data keys ['polarizations'].
+
+Building SVD for initialization of embedding network.
+Setting train transforms.
+Omitting 
+	AddWhiteNoiseComplex
+	RepackageStrainsAndASDS
+	SelectStandardizeRepackageParameters
+	UnpackDict
+	CropMaskStrainRandom
+Loading dataset from training_data/asds_ET_T8.hdf5.
+Calculating new parameter standardizations.
+Generating waveforms for embedding network SVD initialization.
+FS: ifos =  ['ET-1', 'ET-2', 'ET-3']
+FS: waveform_len =  ['ET-1', 'ET-2', 'ET-3']
+...done. This took 29 s.
+Generating SVD basis for ifo:
+...ET-1 done.
+...ET-2 done.
+...ET-3 done.
+...this took 218 s.
+Testing SVD basis matrices.
+...ET-1:
+n = 50
+  Mean mismatch = 0.00048514662603955396
+  Standard deviation = 0.006899451835833591
+  Max mismatch = 0.24398876528693503
+  Median mismatch = 1.5511254365940808e-06
+  Percentiles:
+    99    -> 0.006291644749916434
+    99.9  -> 0.07091237413533055
+    99.99 -> 0.21710447159224405
+n = 100
+  Mean mismatch = 1.6647336993377893e-05
+  Standard deviation = 0.000260635606066203
+  Max mismatch = 0.009809598584421653
+  Median mismatch = 7.85477816123148e-09
+  Percentiles:
+    99    -> 0.00027734109824005787
+    99.9  -> 0.0035005224620165655
+    99.99 -> 0.008573752978551
+n = 150
+  Mean mismatch = 2.7251519640627e-06
+  Standard deviation = 7.210279545989223e-05
+  Max mismatch = 0.003071942556705176
+  Median mismatch = 3.090214750756104e-10
+  Percentiles:
+    99    -> 8.26405964812315e-06
+    99.9  -> 0.000350210122708165
+    99.99 -> 0.002621811256986935
+n = 200
+  Mean mismatch = 2.3812767794001431e-07
+  Standard deviation = 7.1072674778190175e-06
+  Max mismatch = 0.000304232497788437
+  Median mismatch = 2.2382873332560393e-11
+  Percentiles:
+    99    -> 4.079444278637375e-07
+    99.9  -> 2.3473234723606532e-05
+    99.99 -> 0.00026096551323658295
+n = 250
+  Mean mismatch = 6.890734248587993e-09
+  Standard deviation = 1.5877727077446458e-07
+  Max mismatch = 5.644309256758184e-06
+  Median mismatch = 8.362754932988992e-13
+  Percentiles:
+    99    -> 1.9517904690236054e-08
+    99.9  -> 2.6543574321783704e-06
+    99.99 -> 5.180719688672506e-06
+n = 300
+  Mean mismatch = 2.96254254572581e-10
+  Standard deviation = 5.428749675884958e-09
+  Max mismatch = 1.8775926313718827e-07
+  Median mismatch = 3.9968028886505635e-14
+  Percentiles:
+    99    -> 1.279612362736765e-09
+    99.9  -> 9.31386622035088e-08
+    99.99 -> 1.7074280674248226e-07
+n = 350
+  Mean mismatch = 7.035295135349173e-11
+  Standard deviation = 1.5490217382999325e-09
+  Max mismatch = 6.417269693415051e-08
+  Median mismatch = 6.38378239159465e-15
+  Percentiles:
+    99    -> 3.52761541089208e-10
+    99.9  -> 1.1323186388968939e-08
+    99.99 -> 5.517280982793906e-08
+n = 400
+  Mean mismatch = 2.2128314958180794e-11
+  Standard deviation = 3.9208193990277367e-10
+  Max mismatch = 1.2210381927779679e-08
+  Median mismatch = 2.4424906541753444e-15
+  Percentiles:
+    99    -> 1.6415348302878366e-10
+    99.9  -> 6.4953287207687815e-09
+    99.99 -> 1.1757067227468488e-08
+Saving dataset to /scratch/fs201368/tp41139/models/sanity_test/svd_ET-1.hdf5
+...ET-2:
+n = 50
+  Mean mismatch = 0.0004864079858960719
+  Standard deviation = 0.00706037963723088
+  Max mismatch = 0.25250194327385644
+  Median mismatch = 1.6119555413807163e-06
+  Percentiles:
+    99    -> 0.005894566979101501
+    99.9  -> 0.07326638718643201
+    99.99 -> 0.22491596890114385
+n = 100
+  Mean mismatch = 1.6870227973071806e-05
+  Standard deviation = 0.00025716259254795354
+  Max mismatch = 0.009483153112638254
+  Median mismatch = 8.127745532160446e-09
+  Percentiles:
+    99    -> 0.00019673038447396156
+    99.9  -> 0.0032621943360657724
+    99.99 -> 0.008293292442436831
+n = 150
+  Mean mismatch = 2.7834807680640063e-06
+  Standard deviation = 7.727588488358167e-05
+  Max mismatch = 0.003247321445327689
+  Median mismatch = 2.8466223822576353e-10
+  Percentiles:
+    99    -> 6.762836933129613e-06
+    99.9  -> 0.0002967646505306997
+    99.99 -> 0.0028212252134845158
+n = 200
+  Mean mismatch = 2.884249228535252e-07
+  Standard deviation = 8.727245919709609e-06
+  Max mismatch = 0.0003776019398390451
+  Median mismatch = 1.974276298000177e-11
+  Percentiles:
+    99    -> 3.4345277334479876e-07
+    99.9  -> 4.6521300091290803e-05
+    99.99 -> 0.0003189925037892289
+n = 250
+  Mean mismatch = 8.994287198305084e-09
+  Standard deviation = 1.9049346924720145e-07
+  Max mismatch = 5.68060049455088e-06
+  Median mismatch = 8.781864124784988e-13
+  Percentiles:
+    99    -> 2.1246389094731197e-08
+    99.9  -> 2.7408128064999923e-06
+    99.99 -> 5.560785409930812e-06
+n = 300
+  Mean mismatch = 3.677191454110051e-10
+  Standard deviation = 6.990890542785999e-09
+  Max mismatch = 2.480562373285977e-07
+  Median mismatch = 3.7470027081099033e-14
+  Percentiles:
+    99    -> 1.2512244329521115e-09
+    99.9  -> 1.120923119558621e-07
+    99.99 -> 2.2477967719898156e-07
+n = 350
+  Mean mismatch = 7.423765119307645e-11
+  Standard deviation = 1.5766308632824413e-09
+  Max mismatch = 6.321813783571884e-08
+  Median mismatch = 5.773159728050814e-15
+  Percentiles:
+    99    -> 3.6227961186519047e-10
+    99.9  -> 1.4744540911772472e-08
+    99.99 -> 5.516970605321436e-08
+n = 400
+  Mean mismatch = 2.388203129699562e-11
+  Standard deviation = 4.2887042174356836e-10
+  Max mismatch = 1.1798117371952799e-08
+  Median mismatch = 2.3314683517128287e-15
+  Percentiles:
+    99    -> 1.5306960365890628e-10
+    99.9  -> 8.993989273343093e-09
+    99.99 -> 1.1715105356901888e-08
+Saving dataset to /scratch/fs201368/tp41139/models/sanity_test/svd_ET-2.hdf5
+...ET-3:
+n = 50
+  Mean mismatch = 0.00045469809281549706
+  Standard deviation = 0.006620850222645653
+  Max mismatch = 0.23685339982898934
+  Median mismatch = 1.5900437034810366e-06
+  Percentiles:
+    99    -> 0.005394731602950158
+    99.9  -> 0.06938275817177311
+    99.99 -> 0.21062571544248707
+n = 100
+  Mean mismatch = 1.5506883184207622e-05
+  Standard deviation = 0.0002508029571041266
+  Max mismatch = 0.009703518255478993
+  Median mismatch = 9.236926834521597e-09
+  Percentiles:
+    99    -> 0.00018132678673083767
+    99.9  -> 0.0025862026168357293
+    99.99 -> 0.008428912602575778
+n = 150
+  Mean mismatch = 2.4052630182533895e-06
+  Standard deviation = 6.368209406654485e-05
+  Max mismatch = 0.002674042358135287
+  Median mismatch = 3.328095021792876e-10
+  Percentiles:
+    99    -> 5.421418284827777e-06
+    99.9  -> 0.00024206799090716784
+    99.99 -> 0.0023151505864994356
+n = 200
+  Mean mismatch = 2.2052219232954196e-07
+  Standard deviation = 6.3375327786976705e-06
+  Max mismatch = 0.00027080633496767703
+  Median mismatch = 2.5313307006058494e-11
+  Percentiles:
+    99    -> 4.4250535388035135e-07
+    99.9  -> 2.117893662928237e-05
+    99.99 -> 0.0002323159416571876
+n = 250
+  Mean mismatch = 5.357317783116766e-09
+  Standard deviation = 1.1349992831612705e-07
+  Max mismatch = 4.085440145185082e-06
+  Median mismatch = 1.1832756996454918e-12
+  Percentiles:
+    99    -> 2.4023488626179168e-08
+    99.9  -> 1.426273890680391e-06
+    99.99 -> 3.7664558417731328e-06
+n = 300
+  Mean mismatch = 3.5358659017381554e-10
+  Standard deviation = 7.779827643200332e-09
+  Max mismatch = 2.419305548118089e-07
+  Median mismatch = 3.957945082788683e-14
+  Percentiles:
+    99    -> 1.2136476035262686e-09
+    99.9  -> 8.05260374326134e-08
+    99.99 -> 2.402137183179583e-07
+n = 350
+  Mean mismatch = 6.176117312017837e-11
+  Standard deviation = 1.310714086568974e-09
+  Max mismatch = 5.2920210436013804e-08
+  Median mismatch = 5.773159728050814e-15
+  Percentiles:
+    99    -> 3.151556082769952e-10
+    99.9  -> 1.4893854752507008e-08
+    99.99 -> 4.55029272688146e-08
+n = 400
+  Mean mismatch = 2.0326765937106472e-11
+  Standard deviation = 3.5112056294647456e-10
+  Max mismatch = 9.451208926591903e-09
+  Median mismatch = 2.4424906541753444e-15
+  Percentiles:
+    99    -> 1.5395325125844285e-10
+    99.9  -> 6.858440023794165e-09
+    99.99 -> 9.433159556571064e-09
+Saving dataset to /scratch/fs201368/tp41139/models/sanity_test/svd_ET-3.hdf5
+Done
+Truncating SVD matrices below index 48.
+...V matrix shapes:
+      (2001, 400)
+      (2001, 400)
+      (2001, 400)
+
+
+Setting train transforms.
+Loading dataset from training_data/asds_ET_T8.hdf5.
+Calculating new parameter standardizations.
+
+Initializing new posterior model.
+Complete settings:
+dataset_settings:
+  domain:
+    type: UniformFrequencyDomain
+    f_min: 6.0
+    f_max: 256.0
+    delta_f: 0.125
+  waveform_generator:
+    approximant: IMRPhenomXPHM
+    f_ref: 20.0
+    spin_conversion_phase: 0.0
+  intrinsic_prior:
+    mass_1: bilby.core.prior.Constraint(minimum=30.0, maximum=3000.0, name='mass_1')
+    mass_2: bilby.core.prior.Constraint(minimum=30.0, maximum=3000.0, name='mass_2')
+    chirp_mass: bilby.gw.prior.UniformInComponentsChirpMass(minimum=50.0, maximum=1000.0,
+      name='chirp_mass')
+    mass_ratio: bilby.gw.prior.UniformInComponentsMassRatio(minimum=0.125, maximum=1.0,
+      name='mass_ratio')
+    phase: default
+    chi_1: bilby.gw.prior.AlignedSpin(name='chi_1', a_prior=Uniform(minimum=0, maximum=0.9))
+    chi_2: bilby.gw.prior.AlignedSpin(name='chi_2', a_prior=Uniform(minimum=0, maximum=0.9))
+    theta_jn: default
+    luminosity_distance: 1000.0
+    geocent_time: 0.0
+  num_samples: 5000000
+  compression:
+    svd:
+      size: 400
+      num_training_samples: 50000
+      num_validation_samples: 10000
+    whitening: ET_ASD_10km.txt
+train_settings:
+  data:
+    waveform_dataset_path: /data/fs201368/tp41139/waveforms/waveform_dataset_T8_imbh.hdf5
+    train_fraction: 0.95
+    domain_update:
+      f_min: 6.0
+      f_max: 256.0
+    svd_size_update: 400
+    detectors:
+    - ET-1
+    - ET-2
+    - ET-3
+    extrinsic_prior:
+      dec: default
+      ra: default
+      geocent_time: bilby.core.prior.Uniform(minimum=-0.10, maximum=0.10, name='geocent_time')
+      psi: default
+      luminosity_distance: bilby.core.prior.LogUniform(minimum=1000.0, maximum=100_000.0,
+        name='luminosity_distance')
+    ref_time: 1126259462.391
+    inference_parameters:
+    - chirp_mass
+    context_parameters: []
+    standardization:
+      mean:
+        chirp_mass: 661.4448852539062
+      std:
+        chirp_mass: 232.12631225585938
+  model:
+    posterior_model_type: normalizing_flow
+    posterior_kwargs:
+      num_flow_steps: 15
+      base_transform_kwargs:
+        hidden_dim: 1024
+        num_transform_blocks: 5
+        activation: elu
+        dropout_probability: 0.0
+        batch_norm: true
+        num_bins: 8
+        base_transform_type: rq-coupling
+      input_dim: 1
+      context_dim: 128
+    embedding_kwargs:
+      output_dim: 128
+      hidden_dims:
+      - 1024
+      - 1024
+      - 1024
+      - 1024
+      - 1024
+      - 1024
+      - 1024
+      - 1024
+      - 1024
+      - 1024
+      - 1024
+      - 1024
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+      - 256
+      - 256
+      - 256
+      - 256
+      - 256
+      - 256
+      - 128
+      - 128
+      - 128
+      - 128
+      - 128
+      - 128
+      activation: elu
+      dropout: 0.0
+      batch_norm: true
+      svd:
+        num_training_samples: 50000
+        num_validation_samples: 2000
+        size: 400
+      input_dims:
+      - 3
+      - 3
+      - 2001
+      added_context: false
+  training:
+    stage_0:
+      epochs: 200
+      asd_dataset_path: training_data/asds_ET_T8.hdf5
+      freeze_rb_layer: true
+      optimizer:
+        type: adam
+        lr: 0.0001
+      scheduler:
+        type: cosine
+        T_max: 200
+      batch_size: 16384
+
+Putting posterior model to device cuda.
+
+Beginning training stage 0. Settings:
+epochs: 200
+asd_dataset_path: training_data/asds_ET_T8.hdf5
+freeze_rb_layer: true
+optimizer:
+  type: adam
+  lr: 0.0001
+scheduler:
+  type: cosine
+  T_max: 200
+batch_size: 16384
+
+Setting train transforms.
+Loading dataset from training_data/asds_ET_T8.hdf5.
+Using previously-calculated parameter standardizations.
+Initializing new optimizer and scheduler.
+Fixed parameters: 14409600
+Learnable parameters: 202554233
+
+
+Start training epoch 1 with lr [0.0001]

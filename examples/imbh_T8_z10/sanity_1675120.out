@@ -1,0 +1,39 @@
+True NVIDIA H100
+Beginning new training run.
+Loading dataset from /data/fs201368/tp41139/waveforms/waveform_dataset_T8_imbh.hdf5.
+Omitting data keys ['polarizations'].
+
+Building SVD for initialization of embedding network.
+Setting train transforms.
+Omitting 
+	AddWhiteNoiseComplex
+	RepackageStrainsAndASDS
+	SelectStandardizeRepackageParameters
+	UnpackDict
+	CropMaskStrainRandom
+Loading dataset from training_data/asds_ET_T8.hdf5.
+Traceback (most recent call last):
+  File "/data/fs201368/tp41139/conda_envs/ET-DINGO/bin/dingo_train", line 6, in <module>
+    sys.exit(train_local())
+  File "/data/fs201368/tp41139/ET-Dingo/ET-Dingo/dingo/gw/training/train_pipeline.py", line 468, in train_local
+    pm, wfd = prepare_training_new(train_settings, args.train_dir, local_settings)
+  File "/data/fs201368/tp41139/ET-Dingo/ET-Dingo/dingo/gw/training/train_pipeline.py", line 126, in prepare_training_new
+    initial_weights["V_rb_list"] = build_svd_for_embedding_network(
+  File "/data/fs201368/tp41139/ET-Dingo/ET-Dingo/dingo/gw/training/train_builders.py", line 267, in build_svd_for_embedding_network
+    set_train_transforms(
+  File "/data/fs201368/tp41139/ET-Dingo/ET-Dingo/dingo/gw/training/train_builders.py", line 92, in set_train_transforms
+    asd_dataset = ASDDataset(
+  File "/data/fs201368/tp41139/ET-Dingo/ET-Dingo/dingo/gw/noise/asd_dataset.py", line 49, in __init__
+    super().__init__(
+  File "/data/fs201368/tp41139/ET-Dingo/ET-Dingo/dingo/core/dataset.py", line 190, in __init__
+    self.from_file(file_name, dtype_map=dtype_map)
+  File "/data/fs201368/tp41139/ET-Dingo/ET-Dingo/dingo/core/dataset.py", line 213, in from_file
+    with h5py.File(file_name, "r") as f:
+  File "/data/fs201368/tp41139/conda_envs/ET-DINGO/lib/python3.10/site-packages/h5py/_hl/files.py", line 555, in __init__
+    fid = make_fid(name, mode, userblock_size, fapl, fcpl, swmr=swmr)
+  File "/data/fs201368/tp41139/conda_envs/ET-DINGO/lib/python3.10/site-packages/h5py/_hl/files.py", line 232, in make_fid
+    fid = h5f.open(name, flags, fapl=fapl)
+  File "h5py/_objects.pyx", line 54, in h5py._objects.with_phil.wrapper
+  File "h5py/_objects.pyx", line 55, in h5py._objects.with_phil.wrapper
+  File "h5py/h5f.pyx", line 106, in h5py.h5f.open
+FileNotFoundError: [Errno 2] Unable to synchronously open file (unable to open file: name = 'training_data/asds_ET_T8.hdf5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
