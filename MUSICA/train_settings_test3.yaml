@@ -1,5 +1,5 @@
 data:
-  waveform_dataset_path: /data/fs201368/tp41139/waveforms/waveform_dataset_T8_imbh.hdf5  # Contains intrinsic waveforms
+  waveform_dataset_path: /data/fs201368/tp41139/waveforms/waveform_dataset_T8_imbh3.hdf5  # Contains intrinsic waveforms
   train_fraction: 0.95
   domain_update:
     f_min: 6.0
