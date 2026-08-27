@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=20
 #SBATCH --time=12:00:00
-#SBATCH --output=stage1_2.out
+#SBATCH --output=test2.out
 
 module load Miniforge3/25.3.0-3
 eval "$(conda shell.bash hook)"
