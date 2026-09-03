@@ -1,5 +1,5 @@
 dataset_settings:
-  f_min: 10         # defaults to 0
+#  f_min: 10         # defaults to 0
 #  f_max: 2048      # defaults to f_s/2
   f_s: 4096
   time_psd: 1024
