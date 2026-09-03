@@ -152,3 +152,4 @@ dmypy.json
 **/tmp_files/*
 
 dingo-et-venv/
+outdir*/
