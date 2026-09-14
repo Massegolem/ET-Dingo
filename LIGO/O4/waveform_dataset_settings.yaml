@@ -2,7 +2,7 @@ domain:
   type: UniformFrequencyDomain
   f_min: 20.0
   f_max: 1024.0
-  delta_f: 0.125  # Expressions like 1.0/8.0 would require eval and are not supported
+  delta_f: 1.0  # Expressions like 1.0/8.0 would require eval and are not supported
 
 waveform_generator:
   approximant: IMRPhenomXPHM  # SEOBNRv4PHM
@@ -12,8 +12,8 @@ waveform_generator:
 
 # Dataset only samples over intrinsic parameters. Extrinsic parameters are chosen at train time.
 intrinsic_prior:
-  mass_1: bilby.core.prior.Constraint(minimum=10.0, maximum=120.0, name='mass_1')
-  mass_2: bilby.core.prior.Constraint(minimum=10.0, maximum=120.0, name='mass_2')
+  mass_1: bilby.core.prior.Constraint(minimum=5.0, maximum=200.0, name='mass_1')
+  mass_2: bilby.core.prior.Constraint(minimum=5.0, maximum=200.0, name='mass_2')
   chirp_mass: bilby.gw.prior.UniformInComponentsChirpMass(minimum=15.0, maximum=150.0, name='chirp_mass')
   mass_ratio: bilby.gw.prior.UniformInComponentsMassRatio(minimum=0.125, maximum=1.0, name='mass_ratio')
   phase: default
@@ -31,7 +31,7 @@ num_samples: 5000000
 compression:
   svd:
     # Truncate the SVD basis at this size. No truncation if zero.
-    size: 200
+    size: 300
     num_training_samples: 50000
     num_validation_samples: 10000
   whitening: aLIGO_ZERO_DET_high_P_asd.txt

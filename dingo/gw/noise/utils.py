@@ -60,7 +60,6 @@ URL_DIRECTORY = {
         "https://www.gw-openscience.org/timeline/segments/O4b_16KHZ_R1/H1_BURST_CAT2/1396417050/1422118818/",
     ],
     "O4_V1": [
-        "https://www.gw-openscience.org/timeline/segments/O4a_16KHZ_R1/V1_BURST_CAT2/1368195220/1389456018/",
         "https://www.gw-openscience.org/timeline/segments/O4b_16KHZ_R1/V1_BURST_CAT2/1396417050/1422118818/",
     ],
 }

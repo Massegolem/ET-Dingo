@@ -119,6 +119,18 @@ def train_svd_basis(dataset: WaveformDataset, size: int, n_train: int):
     basis = SVDBasis()
     basis.generate_basis(train_data, size)
 
+    
+
+
+    # --- debug ---
+    min_idx = dataset.domain.min_idx
+    below = basis.V[:min_idx]
+    print("max abs below min_idx:", np.max(np.abs(below)))
+    print("mean abs below min_idx:", np.mean(np.abs(below)))
+    #Re-zero the known-zero to avoid numerical issues
+    basis.V[:min_idx] = 0
+    # --- end debug ---
+
     assert np.allclose(basis.V[: dataset.domain.min_idx], 0)
 
     # Since there is a possibility that the size of the dataset returned by
@@ -225,6 +237,12 @@ def generate_dataset(settings: Dict, num_processes: int) -> WaveformDataset:
                         "settings": svd_dataset_settings,
                     }
                 )
+                min_idx = svd_dataset.domain.min_idx
+                for pol, arr in svd_dataset.polarizations.items():
+                    below = arr[:, :min_idx]
+                    print(pol, "max abs below min_idx:", np.max(np.abs(below)),
+                          "nan:", np.isnan(below).sum(), "inf:", np.isinf(below).sum())
+
                 basis, n_train, n_test = train_svd_basis(
                     svd_dataset, svd_settings["size"], n_train
                 )
