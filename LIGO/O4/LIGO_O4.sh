@@ -5,7 +5,7 @@
 #SBATCH --qos=zen4_0768_h100x4
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=44
-#SBATCH --time=70:00:00
+#SBATCH --time=00:20:00
 #SBATCH --output=LIGO_O4.out
 
 module load Miniforge3/25.3.0-3
