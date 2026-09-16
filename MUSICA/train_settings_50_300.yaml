@@ -1,5 +1,5 @@
 data:
-  waveform_dataset_path: /data/fs201368/tp41139/waveforms/waveform_dataset_50_300.hdf5  # Contains intrinsic waveforms
+  waveform_dataset_path: /data/fs201368/tp41139/waveforms/waveform_dataset_T8_imbh.hdf5  # Contains intrinsic waveforms
   train_fraction: 0.95
   domain_update:
     f_min: 6.0
@@ -70,7 +70,7 @@ model:
 
 training:
   stage_0:
-    epochs: 400
+    epochs: 100
     asd_dataset_path: training_data/asds_ET_T8.hdf5 # this should just contain a single fiducial ASD per detector for pretraining
     freeze_rb_layer: True
     optimizer:
@@ -78,8 +78,8 @@ training:
       lr: 7.0e-5
     scheduler:
       type: cosine
-      T_max: 400
-    batch_size: 8192
+      T_max: 100
+    batch_size: 16384 #8192
 
 
 # Local settings for training that have no impact on the final trained network.
