@@ -13,4 +13,4 @@ eval "$(conda shell.bash hook)"
 conda activate $DATA/conda_envs/ET-DINGO
 
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-time dingo_train --settings_file $DATA/ET-Dingo/ET-Dingo/MUSICA/stage2/train_settings_350_650.yaml --train_dir $DATA/models/350_650
+time dingo_train --settings_file $DATA/ET-Dingo/ET-Dingo/MUSICA/train_settings_350_650.yaml --train_dir $DATA/models/350_650
