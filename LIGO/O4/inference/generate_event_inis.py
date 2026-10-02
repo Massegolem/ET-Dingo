@@ -1,78 +1,98 @@
-#!/usr/bin/env python3
-"""
-Generate per-event dingo_pipe .ini files from a NAME.ini template and a
-selected_events.txt list.
-
-For every event name found in selected_events.txt, this script takes
-NAME.ini, replaces every occurrence of the literal string "NAME" with the
-event name, and writes the result to <event_name>.ini in the output
-directory.
-
-Usage:
-    python generate_event_inis.py \
-        --template NAME.ini \
-        --events selected_events.txt \
-        --outdir ./inis
-"""
-
-import argparse
-from pathlib import Path
-
-
-def read_event_names(events_path: Path) -> list[str]:
-    """Read event names from selected_events.txt.
-
-    Skips blank lines and lines starting with '#' (used here as section
-    headers like '# O4a', '# O3b', etc.).
-    """
-    events = []
-    with events_path.open("r") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            events.append(line)
-    return events
-
-
-def generate_inis(template_path: Path, events_path: Path, outdir: Path) -> list[Path]:
-    template_text = template_path.read_text()
-    events = read_event_names(events_path)
-
-    outdir.mkdir(parents=True, exist_ok=True)
-
-    written = []
-    for event in events:
-        event_text = template_text.replace("NAME", event)
-        out_path = outdir / f"{event}.ini"
-        out_path.write_text(event_text)
-        written.append(out_path)
-
-    return written
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--template", type=Path, default=Path("NAME.ini"),
-        help="Path to the template .ini file (default: NAME.ini)",
-    )
-    parser.add_argument(
-        "--events", type=Path, default=Path("selected_events.txt"),
-        help="Path to the event list file (default: selected_events.txt)",
-    )
-    parser.add_argument(
-        "--outdir", type=Path, default=Path("."),
-        help="Directory to write the generated .ini files into (default: current dir)",
-    )
-    args = parser.parse_args()
-
-    written = generate_inis(args.template, args.events, args.outdir)
-
-    print(f"Generated {len(written)} .ini files in {args.outdir.resolve()}:")
-    for path in written:
-        print(f"  {path.name}")
-
-
-if __name__ == "__main__":
-    main()
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "19821fad",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#!/usr/bin/env python3\n",
+    "\"\"\"\n",
+    "Generate per-event dingo_pipe .ini files from a NAME.ini template and a\n",
+    "selected_events.txt list.\n",
+    "\n",
+    "For every event name found in selected_events.txt, this script takes\n",
+    "NAME.ini, replaces every occurrence of the literal string \"NAME\" with the\n",
+    "event name, and writes the result to <event_name>.ini in the output\n",
+    "directory.\n",
+    "\n",
+    "Usage:\n",
+    "    python generate_event_inis.py \\\n",
+    "        --template NAME.ini \\\n",
+    "        --events selected_events.txt \\\n",
+    "        --outdir ./inis\n",
+    "\"\"\"\n",
+    "\n",
+    "import argparse\n",
+    "from pathlib import Path\n",
+    "\n",
+    "\n",
+    "def read_event_names(events_path: Path) -> list[str]:\n",
+    "    \"\"\"Read event names from selected_events.txt.\n",
+    "\n",
+    "    Skips blank lines and lines starting with '#' (used here as section\n",
+    "    headers like '# O4a', '# O3b', etc.).\n",
+    "    \"\"\"\n",
+    "    events = []\n",
+    "    with events_path.open(\"r\") as f:\n",
+    "        for line in f:\n",
+    "            line = line.strip()\n",
+    "            if not line or line.startswith(\"#\"):\n",
+    "                continue\n",
+    "            events.append(line)\n",
+    "    return events\n",
+    "\n",
+    "\n",
+    "def generate_inis(template_path: Path, events_path: Path, outdir: Path) -> list[Path]:\n",
+    "    template_text = template_path.read_text()\n",
+    "    events = read_event_names(events_path)\n",
+    "\n",
+    "    outdir.mkdir(parents=True, exist_ok=True)\n",
+    "\n",
+    "    written = []\n",
+    "    for event in events:\n",
+    "        event_text = template_text.replace(\"NAME\", event)\n",
+    "        out_path = outdir / f\"{event}.ini\"\n",
+    "        out_path.write_text(event_text)\n",
+    "        written.append(out_path)\n",
+    "\n",
+    "    return written\n",
+    "\n",
+    "\n",
+    "def main():\n",
+    "    parser = argparse.ArgumentParser(description=__doc__)\n",
+    "    parser.add_argument(\n",
+    "        \"--template\", type=Path, default=Path(\"NAME.ini\"),\n",
+    "        help=\"Path to the template .ini file (default: NAME.ini)\",\n",
+    "    )\n",
+    "    parser.add_argument(\n",
+    "        \"--events\", type=Path, default=Path(\"selected_events.txt\"),\n",
+    "        help=\"Path to the event list file (default: selected_events.txt)\",\n",
+    "    )\n",
+    "    parser.add_argument(\n",
+    "        \"--outdir\", type=Path, default=Path(\".\"),\n",
+    "        help=\"Directory to write the generated .ini files into (default: current dir)\",\n",
+    "    )\n",
+    "    args = parser.parse_args()\n",
+    "\n",
+    "    written = generate_inis(args.template, args.events, args.outdir)\n",
+    "\n",
+    "    print(f\"Generated {len(written)} .ini files in {args.outdir.resolve()}:\")\n",
+    "    for path in written:\n",
+    "        print(f\"  {path.name}\")\n",
+    "\n",
+    "\n",
+    "if __name__ == \"__main__\":\n",
+    "    main()"
+   ]
+  }
+ ],
+ "metadata": {
+  "language_info": {
+   "name": "python"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
