@@ -76,7 +76,7 @@ training:
     scheduler:
       type: cosine
       T_max: 300
-    batch_size: 16384 
+    batch_size: 12288 
     # early_stopping:
     #   patience: 10
     #   delta: 0.0
@@ -92,7 +92,7 @@ training:
     scheduler:
       type: cosine
       T_max: 150
-    batch_size: 16384
+    batch_size: 12288
     # early_stopping:
     #   patience: 10
     #   delta: 0.0
