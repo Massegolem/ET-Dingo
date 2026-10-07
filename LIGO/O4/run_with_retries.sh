@@ -1,13 +1,20 @@
-DATA_DIR=/scratch/tpausch/ASD/LIGO_O4_2
+DATA_DIR=/scratch/tpausch/ASD/LIGO_O4
 SETTINGS=$DATA_DIR/asd_dataset_settings.yaml
 
-for i in 1 2 3 4 5; do
-  ls $DATA_DIR/tmp/chunks/seg_*.pkl | xargs -P 24 -I{} \
-  dingo_estimate_psds \
-    --data_dir $DATA_DIR \
-    --settings_file $SETTINGS \
-    --time_segments_file {}
+while true; do
+  timeout 3h bash -c '
+  ls "$1"/tmp/chunks/seg_*.pkl | xargs -P 24 -I{} \
+    dingo_estimate_psds \
+      --data_dir "$1" \
+      --settings_file "$2" \
+      --time_segments_file {}
+' _ "$DATA_DIR" "$SETTINGS"
+  status=$?
 
-  echo "Attempt $i failed for $CHUNK, retrying in 15s..."
-  sleep 1
+  if [ $status -eq 0 ]; then
+    echo "All segments completed successfully."
+    break
+  fi
+
+  echo "3h window elapsed (exit $status) — restarting, idempotent skip-if-exists will resume remaining segments."
 done

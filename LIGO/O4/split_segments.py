@@ -2,7 +2,7 @@
 import pickle, numpy as np, yaml, os
 from dingo.gw.noise.utils import get_time_segments
 
-DATA_DIR = "/scratch/tpausch/ASD/LIGO_O4_2"          # must contain asd_dataset_settings.yaml
+DATA_DIR = "/scratch/tpausch/ASD/LIGO_O4"          # must contain asd_dataset_settings.yaml
 SETTINGS_FILE = os.path.join(DATA_DIR, "asd_dataset_settings.yaml")
 N_WORKERS = 24                                # see note on picking this below
 
