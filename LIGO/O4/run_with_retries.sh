@@ -1,4 +1,4 @@
-DATA_DIR=/scratch/tpausch/ASD/LIGO_O4
+DATA_DIR=/scratch/tpausch/ASD/LIGO_O4_T4
 SETTINGS=$DATA_DIR/asd_dataset_settings.yaml
 
 while true; do
