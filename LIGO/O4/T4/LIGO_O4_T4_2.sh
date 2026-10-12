@@ -5,7 +5,8 @@
 #SBATCH --partition=zen4_0768_h100x4
 #SBATCH --qos=zen4_0768_h100x4
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=32 
+#SBATCH --cpus-per-task=22
+#SBATCH --threads-per-core=2
 #SBATCH --time=72:00:00
 #SBATCH --output=LIGO_O4_T4.out
 
