@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=dingo_LIGO_O3
+#SBATCH --job-name=dingo_LIGO_O4_T4
 #SBATCH --account=p201368
 #SBATCH --partition=zen4_0768_h100x4
 #SBATCH --qos=zen4_0768_h100x4
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=22
 #SBATCH --time=72:00:00
-#SBATCH --output=LIGO_O3.out
+#SBATCH --output=LIGO_O4_T4.out
 
 #improve data loading times
 export OMP_NUM_THREADS=1
@@ -17,4 +17,6 @@ eval "$(conda shell.bash hook)"
 conda activate $DATA/conda_envs/ET-DINGO
 
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-time dingo_train --settings_file $DATA/ET-Dingo/ET-Dingo/LIGO/O3/train_settings.yaml --train_dir $DATA/models/LIGO_O3
+time dingo_train --settings_file $DATA/ET-Dingo/ET-Dingo/LIGO/O4/T4/train_settings.yaml --train_dir $DATA/models/LIGO_O4_T4
+
+#test
