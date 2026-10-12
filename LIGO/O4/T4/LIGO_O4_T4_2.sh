@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #ASC --vanilla
-#SBATCH --account=<your account>
+#SBATCH --account=p201368
 #SBATCH --partition=zen4_0768_h100x4
-#SBATCH --qos=<your qos>
+#SBATCH --qos=zen4_0768_h100x4
 #SBATCH --time=72:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
