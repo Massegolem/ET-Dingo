@@ -1,14 +1,15 @@
-#!/bin/bash
-#SBATCH --job-name=dingo_LIGO_O4_T4
-#SBATCH --mem=250G 
-#SBATCH --account=p201368
+#!/usr/bin/env bash
+#ASC --vanilla
+#SBATCH --account=<your account>
 #SBATCH --partition=zen4_0768_h100x4
-#SBATCH --qos=zen4_0768_h100x4
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=22
-#SBATCH --threads-per-core=2
+#SBATCH --qos=<your qos>
 #SBATCH --time=72:00:00
-#SBATCH --output=LIGO_O4_T4.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=32      # up from 22
+#SBATCH --mem=250G              # up from 190750M
+#SBATCH --threads-per-core=1
 
 #improve data loading times
 export OMP_NUM_THREADS=1
