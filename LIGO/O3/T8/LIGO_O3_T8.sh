@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=22      # up from 22
 #SBATCH --threads-per-core=2
-#SBATCH --mem=250G              # up from 190750M
+#SBATCH --mem=400G              # up from 190750M
 #SBATCH --job-name=dingo_LIGO_O3_T8
 #SBATCH --output=LIGO_O3_T8.out
 
