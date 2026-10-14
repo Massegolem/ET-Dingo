@@ -10,7 +10,8 @@
 #SBATCH --cpus-per-task=22      # up from 22
 #SBATCH --threads-per-core=2
 #SBATCH --mem=250G              # up from 190750M
-
+#SBATCH --job-name=dingo_LIGO_O4_T4
+#SBATCH --output=LIGO_O4_T4.out
 
 
 
