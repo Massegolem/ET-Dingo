@@ -1,0 +1,51 @@
+[33m4043464f[m[33m ([m[1;33mtag: [m[1;33mv0.10.3[m[33m)[m DINGO-BNS training: heterodyned datasets, chirp-mass GNPE, band tool, example, end-to-end test (#434)
+[33mb3641783[m Add tidal waveform support; exact (2, 2) synthetic phase and psi in Bilby's spin convention (#419)
+[33m3d92b4f3[m Apply review: inclusive grid docs, drawn-phase psi conditional test
+[33m2cbc25ac[m Read approximation_22_mode once in _synthetic_parameters_step
+[33m95c9d2f3[m Merge remote-tracking branch 'origin/main' into phase-psi-marginalization
+[33mcb018d89[m Raise early for psi-marginalized networks without a synthetic (phase, psi)
+[33m68b7fba3[m Cache the synthetic-phase log likelihood for importance sampling (#422)
+[33maf2f038a[m Rename synthetic phase settings and add PhasePsiRecoveryDefault (512 x 128)
+[33mc9f459c8[m Add SyntheticPhasePsiFactor to draw phase and psi for psi-marginalized networks
+[33mcdcf430c[m Split off the psi prior for networks that do not infer psi
+[33md57fc52c[m Drop a stored log likelihood whenever proposal extensions are drawn
+[33m917585fd[m Cache the synthetic-phase log likelihood for importance sampling
+[33m596b599f[m Sample calibration parameters and synthetic phase in one chain (#421)
+[33mf6467144[m Optimize synthetic phase reconstruction (#381)
+[33m7b90cb0f[m Fix review findings on the spine port
+[33m7e2e4c7d[m Merge hackathon-1 into transformer
+[33m2c954d20[m Merge branch 'hackathon-1' into sampler-revamp
+[33mba9391a4[m Merge main into hackathon-1
+[33m3404378f[m Fix docstrings and docs flagged by review, and a falsy-zero seed check
+[33m06a9d746[m Let importance sampling use a frequency range different from the network's
+[33md7bd73c9[m Multi-GPU training (DDP) (#358)
+[33m970375d1[m Default to normalized token positions and record the choice in the settings
+[33m9696372c[m Guard the transformer's degenerate cases; add optional position normalization
+[33m326ec909[m Wire flow matching to the transformer embedding; refuse GNPE with tokenization
+[33m570dfb32[m Index detectors by position in the training list, not a global table
+[33md7901928[m Align mask-settings naming with random_strain_cropping
+[33m5cbe9dc5[m Merge branch 'hackathon-1' into transformer
+[33mf1c57f0f[m Add flexible frequency inference for transformer models
+[33mcfca87c3[m Added MaskFrequencyInterval during training, renamed blocks to detectors
+[33m8a1980ee[m Added MaskFrequencyEdges transform for training and tests.
+[33m3acb5df2[m Add MaskDetectors transforms
+[33ma3aabf8b[m Add random tokenization transform
+[33mbf966b5b[m Add transformer encoder as embedding network for normalizing flow training
+[33m47df19ad[m Apply the review's simplifications
+[33mb03a9ee3[m Apply the PR-review fix batch: GNPE correctness, validation, and cleanups
+[33m6643305a[m Split dingo/core/factors.py into the dingo.core.inference package
+[33m40277980[m Emit sample tables once so num_samples always means draws per root row
+[33me1dc5bfe[m ENH: Add triangular interferometer (#333)
+[33m76fdf1de[m Stop update_prior mutating the caller's dict
+[33me6d2e5a4[m Merge branch 'hackathon-1' into sampler-revamp
+[33m76724905[m Split the GW inference module by responsibility
+[33m35c951a6[m Add unit tests across core, gw, and pipe (+ two small fixes) (#387)
+[33mf23b7699[m Add the spin-convention reparametrization
+[33m53c5ab22[m Derive importance-sampling contexts instead of threading likelihood views
+[33m07681d00[m Consolidate Result onto the sampler context
+[33m4a9cc24e[m Delete the legacy samplers
+[33m9f6ff752[m Run synthetic phase as a chain over the sampler context
+[33mc0187159[m Delegate likelihood construction to the sampler context
+[33m759fbb0b[m Reconstruct the sampler context from serialized results
+[33m8a2547e2[m Add a chain device policy, cache the likelihood, invalidate stale contexts
+[33m028108c4[m Route the prior through GWSamplerContext as the single owner
