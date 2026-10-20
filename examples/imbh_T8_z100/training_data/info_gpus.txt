@@ -1,0 +1,8 @@
+# Running on host:
+hepgpu2.oeaw.ads
+# CUDA information:
+cuDNN version: 91900
+CUDA version: 12.8
+device count: 1
+device name: NVIDIA RTX 4000 Ada Generation
+memory (GB): 19.5
