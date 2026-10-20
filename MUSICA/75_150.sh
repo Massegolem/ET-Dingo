@@ -11,7 +11,7 @@
 #SBATCH --threads-per-core=2
 #SBATCH --mem=150G              # up from 190750M
 #SBATCH --job-name=dingo_75_150_3
-#SBATCH --output=75_150_2.out
+#SBATCH --output=75_150_3.out
 
 
 module load Miniforge3/25.3.0-3
