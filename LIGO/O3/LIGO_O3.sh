@@ -16,5 +16,9 @@ module load Miniforge3/25.3.0-3
 eval "$(conda shell.bash hook)"
 conda activate $DATA/conda_envs/ET-DINGO
 
+#python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+#time dingo_train --settings_file $DATA/ET-Dingo/ET-Dingo/LIGO/O3/train_settings.yaml --train_dir $DATA/models/LIGO_O3
+
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-time dingo_train --settings_file $DATA/ET-Dingo/ET-Dingo/LIGO/O3/train_settings.yaml --train_dir $DATA/models/LIGO_O3
+time dingo_train --checkpoint $DATA/models/LIGO_O3/model_latest.pt --train_dir $DATA/models/LIGO_O3
+
