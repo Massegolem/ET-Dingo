@@ -70,7 +70,7 @@ model:
 
 training:
   stage_0:
-    epochs: 400
+    epochs: 100
     asd_dataset_path: /data/fs201368/tp41139/asd_datasets/asds_ET_T8.hdf5 # this should just contain a single fiducial ASD per detector for pretraining
     freeze_rb_layer: True
     optimizer:
@@ -78,7 +78,7 @@ training:
       lr: 1.0e-4
     scheduler:
       type: cosine
-      T_max: 400
+      T_max: 100
     batch_size: 16384 #8192
 
 
@@ -91,5 +91,5 @@ local:
     max_epochs_per_run: 500
   checkpoint_epochs: 50
   leave_waveforms_on_disk: True
-  # local_cache_path: tmp # uncomment to avoid slow data loading during training due to network traffic on cluster
+  local_cache_path: /local/tpausch/JOBID_PLACEHOLDER # uncomment to avoid slow data loading during training due to network traffic on cluster
  

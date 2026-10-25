@@ -10,6 +10,9 @@
 # (only do this if your GPU/CPU resources can handle running them
 # concurrently).
 
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+
 set -uo pipefail
 
 INIS_DIR="${1:-inis}"

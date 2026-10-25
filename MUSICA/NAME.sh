@@ -10,13 +10,19 @@
 #SBATCH --cpus-per-task=22      # up from 22
 #SBATCH --threads-per-core=2
 #SBATCH --mem=250G              # up from 190750M
-#SBATCH --job-name=dingo_NAME
-#SBATCH --output=NAME.out
+#SBATCH --job-name=stage2_NAME
+#SBATCH --output=stage2_NAME.out
 
 
 module load Miniforge3/25.3.0-3
 eval "$(conda shell.bash hook)"
 conda activate $DATA/conda_envs/ET-DINGO
 
+
+CACHE=/local/$USER/$SLURM_JOB_ID
+mkdir -p "$CACHE"
+sed "s|/local/tpausch/JOBID_PLACEHOLDER|$CACHE|" $DATA/ET-Dingo/ET-Dingo/MUSICA/STAGE/train_settings_NAME.yaml > train_settings_job.yaml
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-time dingo_train --settings_file $DATA/ET-Dingo/ET-Dingo/MUSICA/STAGE/train_settings_NAME.yaml --train_dir $DATA/models/NAME
+time dingo_train --settings_file train_settings_job.yaml --train_dir $DATA/models/NAME
+
+rm -rf "$CACHE" 

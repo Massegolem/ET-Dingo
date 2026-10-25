@@ -1,0 +1,15 @@
+sbatch 50_125.sh
+
+sbatch 100_175.sh
+sbatch 125_200.sh
+sbatch 125_275.sh
+sbatch 175_325.sh
+sbatch 225_375.sh
+sbatch 275_425.sh
+sbatch 325_475.sh
+sbatch 375_525.sh
+sbatch 400_625.sh
+sbatch 475_700.sh
+sbatch 525_825.sh
+
+sbatch 750_1000.sh
