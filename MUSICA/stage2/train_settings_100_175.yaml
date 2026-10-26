@@ -91,5 +91,5 @@ local:
     max_epochs_per_run: 500
   checkpoint_epochs: 50
   leave_waveforms_on_disk: True
-  local_cache_path: /local/tpausch/JOBID_PLACEHOLDER # uncomment to avoid slow data loading during training due to network traffic on cluster
+  local_cache_path: /local/tpausch/100_175 # uncomment to avoid slow data loading during training due to network traffic on cluster
  

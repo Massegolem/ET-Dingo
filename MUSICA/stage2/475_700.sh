@@ -19,10 +19,13 @@ eval "$(conda shell.bash hook)"
 conda activate $DATA/conda_envs/ET-DINGO
 
 
-CACHE=/local/$USER/$SLURM_JOB_ID
-mkdir -p "$CACHE"
-sed "s|/local/tpausch/JOBID_PLACEHOLDER|$CACHE|" $DATA/ET-Dingo/ET-Dingo/MUSICA/STAGE/train_settings_475_700.yaml > train_settings_job.yaml
-python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-time dingo_train --settings_file train_settings_job.yaml --train_dir $DATA/models/475_700
+mkdir -p /local/tpausch/475_700
 
-rm -rf "$CACHE" 
+python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+time dingo_train --settings_file train_settings_475_700.yaml --train_dir $DATA/models/475_700
+
+rm -rf /local/tpausch/475_700
+
+
+
+

@@ -25,3 +25,7 @@ python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_
 time dingo_train --settings_file train_settings_50_125.yaml --train_dir $DATA/models/50_125
 
 rm -rf /local/tpausch/50_125
+
+
+
+
