@@ -4,7 +4,6 @@
 #SBATCH --partition=zen4_0768_h100x4
 #SBATCH --qos=zen4_0768_h100x4
 #SBATCH --time=4:49:00
-#SBATCH --time=0:15:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1

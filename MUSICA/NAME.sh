@@ -14,6 +14,10 @@
 #SBATCH --output=stage2_NAME.out
 
 
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+
+
 module load Miniforge3/25.3.0-3
 eval "$(conda shell.bash hook)"
 conda activate $DATA/conda_envs/ET-DINGO
