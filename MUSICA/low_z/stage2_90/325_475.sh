@@ -3,7 +3,7 @@
 #SBATCH --account=p201368
 #SBATCH --partition=zen4_0768_h100x4
 #SBATCH --qos=zen4_0768_h100x4
-#SBATCH --time=9:37:00
+#SBATCH --time=38:25:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1
@@ -12,6 +12,10 @@
 #SBATCH --mem=250G              # up from 190750M
 #SBATCH --job-name=stage2_325_475
 #SBATCH --output=stage2_325_475.out
+
+
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
 
 
 module load Miniforge3/25.3.0-3

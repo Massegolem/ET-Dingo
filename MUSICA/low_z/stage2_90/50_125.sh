@@ -3,7 +3,7 @@
 #SBATCH --account=p201368
 #SBATCH --partition=zen4_0768_h100x4
 #SBATCH --qos=zen4_0768_h100x4
-#SBATCH --time=4:49:00
+#SBATCH --time=19:13:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1
@@ -13,8 +13,10 @@
 #SBATCH --job-name=stage2_50_125
 #SBATCH --output=stage2_50_125.out
 
+
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
+
 
 module load Miniforge3/25.3.0-3
 eval "$(conda shell.bash hook)"

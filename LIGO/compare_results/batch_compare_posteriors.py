@@ -4,29 +4,34 @@ files for many events, producing one overlaid corner plot per event with
 the DINGO effective sample size / importance-sampling efficiency annotated
 on the plot.
 
-Expected directory layout
---------------------------
+Supported GWTC release layouts (all in one flat folder)
+--------------------------------------------------------
+GWTC-2.1 / GWTC-3 (O1-O3):
+    IGWN-GWTC2p1-v2-<EVENT>_PEDataRelease_mixed_cosmo.h5
+    IGWN-GWTC2p1-v2-<EVENT>_PEDataRelease_mixed_nocosmo.h5
+    IGWN-GWTC3p0-v3-<EVENT>_PEDataRelease_mixed_cosmo.h5
+    IGWN-GWTC3p0-v3-<EVENT>_PEDataRelease_mixed_nocosmo.h5
+GWTC-4.1 / GWTC-5.0 (O4a/O4b):
+    IGWN-GWTC4p1-<hash>-<EVENT>-combined_PEDataRelease.hdf5
+    IGWN-GWTC5p0-<hash>-<EVENT>-combined_PEDataRelease.hdf5
+
+For GWTC-2.1/3 you get two files per event; `gwtc_variant` picks which one
+("nocosmo" or "cosmo"). The detector-frame parameters compared here are
+available in both.
+
 DINGO results (one subfolder per event):
     <dingo_base>/outdir_<EVENT>/result/<EVENT>_data0_<id>_importance_sampling.hdf5
-    (the combined file -- the *_part0/1/2/3.hdf5 chunk files are ignored
-    automatically since their names don't match the glob pattern below)
-
-GWTC PE release files (one flat folder, many events):
-    <gwtc_dir>/IGWN-GWTC4p1-<hash>-<EVENT>-combined_PEDataRelease.hdf5
+    (the *_part0/1/2/3.hdf5 chunk files are ignored automatically)
 
 Output:
     <output_dir>/<EVENT>_corner_comparison.png   (one per event)
-    <output_dir>/summary.csv                     (per-event bookkeeping:
-                                                    n_eff, efficiency,
-                                                    which GWTC approximant
-                                                    group was actually used,
-                                                    matched files, errors)
+    <output_dir>/summary.csv                     (per-event bookkeeping)
 
 Requires: h5py, numpy, pandas, corner, matplotlib
-    pip install h5py numpy pandas corner matplotlib
 """
 
 import os
+import re
 import traceback
 from pathlib import Path
 
@@ -47,7 +52,7 @@ import matplotlib.lines as mlines
 def _search(h5obj, required_keys):
     """Recursively search an open h5py File/Group for the first dataset or
     group of 1-D datasets that contains all `required_keys`. Returns
-    (kind, obj, path) or None."""
+    (kind, obj, path) or None. (Used for DINGO files.)"""
     for name, obj in h5obj.items():
         path = f"{h5obj.name}/{name}".lstrip("/")
         if isinstance(obj, h5py.Dataset):
@@ -69,8 +74,8 @@ def load_posterior(path, group_path=None,
     """
     Load a posterior-sample table from an HDF5 file into a pandas
     DataFrame, regardless of whether it's stored as a single compound
-    dataset (DINGO "samples" style) or a group of 1-D datasets (bilby/GWTC
-    "posterior_samples" style). Returns (DataFrame, group_path_used).
+    dataset (DINGO / pesummary "posterior_samples" style) or a group of 1-D
+    datasets. Returns (DataFrame, group_path_used).
     """
     required = set(required_keys)
     with h5py.File(path, "r") as f:
@@ -98,34 +103,64 @@ def load_posterior(path, group_path=None,
     return df, used_path
 
 
-def find_gwtc_posterior_group(path, preferred_names,
-                               required_keys=("chirp_mass", "mass_ratio")):
-    """
-    Try a priority-ordered list of approximant/group names (e.g.
-    ["C01:Mixed", "C00:Mixed+XO4a", "C00:IMRPhenomXO4a", ...]) and return
-    the first one that exists in this particular file and whose
-    'posterior_samples' sub-table has the required columns. Falls back to
-    an unrestricted auto-search if none of the preferred names are present
-    (different events sometimes ship different subsets of approximants).
-    Returns the resolved group path (e.g. "C01:Mixed/posterior_samples").
-    """
+def _has_mass_params(keys):
+    keys = set(keys)
+    return ({"chirp_mass", "mass_ratio"} <= keys) or ({"mass_1", "mass_2"} <= keys)
+
+
+def list_posterior_groups(path):
+    """Return every '<...>/posterior_samples' table in a GWTC file that
+    contains mass parameters, e.g. ['C01:IMRPhenomXPHM/posterior_samples',
+    'C01:Mixed/posterior_samples', ...]."""
+    found = []
+
+    def visit(name, obj):
+        if not name.endswith("posterior_samples"):
+            return
+        if isinstance(obj, h5py.Dataset):
+            keys = obj.dtype.names or ()
+        else:
+            keys = obj.keys()
+        if _has_mass_params(keys):
+            found.append(name)
+
     with h5py.File(path, "r") as f:
-        for name in preferred_names:
-            candidate = f"{name}/posterior_samples"
-            if candidate in f:
-                fields = f[candidate].dtype.names if isinstance(f[candidate], h5py.Dataset) else None
-                if fields is None:
-                    keys = set(f[candidate].keys())
-                    ok = set(required_keys).issubset(keys)
-                else:
-                    ok = fields and set(required_keys).issubset(fields)
-                if ok:
-                    return candidate
-        # fall back to unrestricted search
-        found = _search(f, set(required_keys))
-        if found is not None:
-            return found[2]
+        f.visititems(visit)
+    return found
+
+
+def find_gwtc_posterior_group(path, preferred_names):
+    """
+    Pick the posterior_samples table to use from a GWTC file.
+
+    1. Walk `preferred_names` (e.g. "C01:Mixed", "C01:IMRPhenomXPHM", ...)
+       and return the first one that exists in this file.
+    2. Otherwise fall back to any group with "mixed" in its name.
+    3. Otherwise take the first posterior_samples table that has mass
+       parameters (a note is printed, since this differs per event).
+    """
+    available = list_posterior_groups(path)
+    for name in preferred_names:
+        candidate = f"{name}/posterior_samples"
+        if candidate in available:
+            return candidate
+    mixed = [a for a in available if "mixed" in a.lower()]
+    if mixed:
+        print(f"\n    (fallback to '{mixed[0]}'; available: {available})", end=" ")
+        return mixed[0]
+    if available:
+        print(f"\n    (fallback to '{available[0]}'; available: {available})", end=" ")
+        return available[0]
     raise ValueError(f"No usable posterior_samples group found in {path}")
+
+
+def describe_gwtc_file(path):
+    """Debug helper: print all posterior tables and their columns."""
+    for g in list_posterior_groups(path):
+        with h5py.File(path, "r") as f:
+            obj = f[g]
+            cols = obj.dtype.names if isinstance(obj, h5py.Dataset) else list(obj.keys())
+        print(f"{g}: {len(cols)} columns\n  {list(cols)}")
 
 
 def get_weights(df):
@@ -154,11 +189,21 @@ def effective_sample_size(raw_weights):
 # --------------------------------------------------------------------------
 
 def add_derived_quantities(df):
-    """Add mass_1, mass_2 (from chirp_mass & mass_ratio) and chi_eff
-    (mass-weighted aligned spin) if not already present, using whichever
-    spin columns are available."""
+    """Make sure chirp_mass, mass_ratio, mass_1, mass_2 and chi_eff are all
+    present (derived from whatever is available), using whichever spin
+    columns exist."""
     df = df.copy()
+    cols = set(df.columns)
 
+    # (mass_1, mass_2) -> (chirp_mass, mass_ratio)   [needed for some older files]
+    if {"mass_1", "mass_2"} <= cols:
+        m1_, m2_ = df["mass_1"].to_numpy(), df["mass_2"].to_numpy()
+        if "chirp_mass" not in cols:
+            df["chirp_mass"] = (m1_ * m2_) ** 0.6 / (m1_ + m2_) ** 0.2
+        if "mass_ratio" not in cols:
+            df["mass_ratio"] = m2_ / m1_
+
+    # (chirp_mass, mass_ratio) -> (mass_1, mass_2)
     if "mass_1" not in df.columns and {"chirp_mass", "mass_ratio"} <= set(df.columns):
         mc, q = df["chirp_mass"].to_numpy(), df["mass_ratio"].to_numpy()
         total_mass = mc * (1.0 + q) ** 1.2 / q ** 0.6
@@ -233,6 +278,10 @@ def make_comparison_corner(df1, w1, label1, df2, w2, label2, params,
 # 4. File discovery helpers
 # --------------------------------------------------------------------------
 
+DEFAULT_RELEASE_PRIORITY = ["GWTC5p0", "GWTC4p1", "GWTC3p0", "GWTC2p1"]
+_RELEASE_RE = re.compile(r"IGWN-(GWTC\d+p\d+)")
+
+
 def find_dingo_file(outdir):
     """Find the combined *_importance_sampling.hdf5 file inside
     outdir_<EVENT>/result/ (the _partN.hdf5 chunk files don't match this
@@ -249,10 +298,54 @@ def find_dingo_file(outdir):
     return candidates[0]
 
 
-def find_gwtc_file(gwtc_dir, event):
-    """Find the GWTC PE release file for a given event, e.g. GW230601_224134."""
-    matches = sorted(Path(gwtc_dir).glob(f"*{event}*combined_PEDataRelease.hdf5"))
-    return matches[0] if matches else None
+def _classify_gwtc_file(path):
+    """Return (release, variant) for a GWTC PE sample file, else None.
+    variant is 'combined' (GWTC-4/5), or 'cosmo' / 'nocosmo' (GWTC-2.1/3).
+    Skymap stats, tarballs, notebooks, PESummaryTable and leftover tmp*
+    download files are rejected."""
+    name = path.name
+    if path.suffix not in (".h5", ".hdf5") or name.startswith("tmp"):
+        return None
+    m = _RELEASE_RE.search(name)
+    if m is None:
+        return None
+    release = m.group(1)
+    if "combined_PEDataRelease" in name:
+        return release, "combined"
+    if "_mixed_nocosmo" in name:
+        return release, "nocosmo"
+    if "_mixed_cosmo" in name:
+        return release, "cosmo"
+    return None
+
+
+def find_gwtc_file(gwtc_dir, event, variant="nocosmo",
+                    release_priority=DEFAULT_RELEASE_PRIORITY):
+    """Find the GWTC PE release file for an event, e.g. GW190521_030229 or
+    GW230601_224134. Returns (path, release) or None.
+
+    - GWTC-2.1/3 events: picks the `variant` file ("nocosmo" or "cosmo").
+    - If an event appears in several releases, the release earliest in
+      `release_priority` wins.
+    """
+    cands = []
+    for p in sorted(Path(gwtc_dir).glob(f"*{event}*")):
+        cls = _classify_gwtc_file(p)
+        if cls is None:
+            continue
+        release, var = cls
+        if var in ("cosmo", "nocosmo") and var != variant:
+            continue
+        cands.append((p, release))
+    if not cands:
+        return None
+
+    def rank(item):
+        rel = item[1]
+        return release_priority.index(rel) if rel in release_priority else len(release_priority)
+
+    cands.sort(key=rank)  # stable sort: ties keep alphabetical order
+    return cands[0]
 
 
 def extract_event_name(outdir_path):
@@ -266,7 +359,9 @@ def extract_event_name(outdir_path):
 # --------------------------------------------------------------------------
 
 def batch_compare(dingo_base, gwtc_dir, output_dir,
-                   gwtc_group_priority, params_wanted):
+                   gwtc_group_priority, params_wanted,
+                   gwtc_variant="nocosmo",
+                   release_priority=DEFAULT_RELEASE_PRIORITY):
     os.makedirs(output_dir, exist_ok=True)
     outdirs = sorted(Path(dingo_base).glob("outdir_GW*"))
     if not outdirs:
@@ -283,12 +378,14 @@ def batch_compare(dingo_base, gwtc_dir, output_dir,
             rows.append({"event": event, "status": "skipped_no_dingo_file"})
             continue
 
-        gwtc_file = find_gwtc_file(gwtc_dir, event)
-        if gwtc_file is None:
+        hit = find_gwtc_file(gwtc_dir, event, variant=gwtc_variant,
+                             release_priority=release_priority)
+        if hit is None:
             print("SKIP (no matching GWTC file)")
             rows.append({"event": event, "status": "skipped_no_gwtc_file",
                          "dingo_file": str(dingo_file)})
             continue
+        gwtc_file, release = hit
 
         try:
             df_a, _ = load_posterior(dingo_file)
@@ -312,7 +409,8 @@ def batch_compare(dingo_base, gwtc_dir, output_dir,
             if len(params) < 2:
                 print(f"SKIP (fewer than 2 shared params: {params})")
                 rows.append({"event": event, "status": "skipped_too_few_params",
-                             "dingo_file": str(dingo_file), "gwtc_file": str(gwtc_file)})
+                             "dingo_file": str(dingo_file), "gwtc_file": str(gwtc_file),
+                             "gwtc_release": release})
                 continue
 
             outfile = Path(output_dir) / f"{event}_corner_comparison.png"
@@ -321,17 +419,17 @@ def batch_compare(dingo_base, gwtc_dir, output_dir,
                 f"IS efficiency = {efficiency:.1%}"
             )
             fig = make_comparison_corner(
-                df_a, w_a, "DINGO (IS)", df_b, w_b, "GWTC PE",
+                df_a, w_a, "DINGO (IS)", df_b, w_b, f"{release} PE",
                 params, outfile=str(outfile), title=event, annotation=annotation,
             )
             plt.close(fig)
 
             print(f"OK (n_eff={n_eff:.0f}, eff={efficiency:.1%}, "
-                  f"{len(params)} params, gwtc_group={gwtc_group})")
+                  f"{len(params)} params, {release}, gwtc_group={gwtc_group})")
             rows.append({
                 "event": event, "status": "ok",
                 "dingo_file": str(dingo_file), "gwtc_file": str(gwtc_file),
-                "gwtc_group_used": gwtc_group,
+                "gwtc_release": release, "gwtc_group_used": gwtc_group,
                 "n_dingo_samples": len(df_a), "n_eff": n_eff,
                 "sampling_efficiency": efficiency,
                 "n_params_compared": len(params),
@@ -342,7 +440,8 @@ def batch_compare(dingo_base, gwtc_dir, output_dir,
             print(f"ERROR ({e})")
             traceback.print_exc()
             rows.append({"event": event, "status": "error", "error": str(e),
-                         "dingo_file": str(dingo_file), "gwtc_file": str(gwtc_file)})
+                         "dingo_file": str(dingo_file), "gwtc_file": str(gwtc_file),
+                         "gwtc_release": release})
 
     summary = pd.DataFrame(rows)
     summary_path = Path(output_dir) / "summary.csv"
@@ -358,16 +457,27 @@ def batch_compare(dingo_base, gwtc_dir, output_dir,
 
 if __name__ == "__main__":
     # --- edit these paths ---------------------------------------------
-    DINGO_BASE = "/home/tpausch/ET-Dingo/LIGO/O4/inference"   # contains outdir_GW*/result/
+    DINGO_BASE = "/home/tpausch/ET-Dingo/LIGO/O3/T8"   # contains outdir_GW*/result/
     GWTC_DIR = "/scratch/tpausch/zenodo"
-    OUTPUT_DIR = "/home/tpausch/ET-Dingo/LIGO/O4/compare_results"
+    OUTPUT_DIR = "/home/tpausch/ET-Dingo/LIGO/O3/T8/compare_results"
     # ---------------------------------------------------------------------
 
-    # Priority order of GWTC approximant groups to use (first one present
-    # in a given file wins). "C01:Mixed" is the usual recommended combined
-    # posterior if present; adjust to taste / what your events actually have.
+    # GWTC-2.1 / GWTC-3 ship two files per event: "nocosmo" or "cosmo".
+    # (Ignored for GWTC-4/5 files.)
+    GWTC_VARIANT = "nocosmo"
+
+    # If an event shows up in several releases, earlier entries win.
+    RELEASE_PRIORITY = ["GWTC5p0", "GWTC4p1", "GWTC3p0", "GWTC2p1"]
+
+    # Priority order of GWTC approximant groups (first one present in a given
+    # file wins). If none match, the script falls back to any group with
+    # "mixed" in its name, then to the first posterior_samples table found
+    # (a note is printed in that case; see gwtc_group_used in summary.csv).
     GWTC_GROUP_PRIORITY = [
-        "C01:Mixed", "C00:Mixed+XO4a", "C00:Mixed",
+        # GWTC-2.1 / GWTC-3
+        "C01:Mixed", "C01:IMRPhenomXPHM", "C01:SEOBNRv4PHM",
+        # GWTC-4 / GWTC-5
+        "C00:Mixed+XO4a", "C00:Mixed",
         "C00:IMRPhenomXO4a", "C00:SEOBNRv5PHM", "C00:NRSur7dq4",
         "C00:IMRPhenomXPHM-SpinTaylor",
     ]
@@ -381,4 +491,6 @@ if __name__ == "__main__":
     ]
 
     batch_compare(DINGO_BASE, GWTC_DIR, OUTPUT_DIR,
-                  GWTC_GROUP_PRIORITY, PARAMS_WANTED)
+                  GWTC_GROUP_PRIORITY, PARAMS_WANTED,
+                  gwtc_variant=GWTC_VARIANT,
+                  release_priority=RELEASE_PRIORITY)
