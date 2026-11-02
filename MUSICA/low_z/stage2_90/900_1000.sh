@@ -26,7 +26,7 @@ conda activate $DATA/conda_envs/ET-DINGO
 mkdir -p /local/tpausch/900_1000
 
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-time dingo_train --settings_file train_settings_900_1000.yaml --train_dir $DATA/models/900_1000
+time dingo_train --settings_file train_settings_900_1000.yaml --train_dir $DATA/models/stage2_90/900_1000
 
 rm -rf /local/tpausch/900_1000
 
