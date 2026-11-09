@@ -1,6 +1,5 @@
 #!/bin/bash
 #SBATCH --job-name "myjob"
-#SBATCH -N 1
 #SBATCH --gres=gpu:2
 #SBATCH -p zen4_0768_h100x4
 #SBATCH --qos zen4_0768_h100x4
