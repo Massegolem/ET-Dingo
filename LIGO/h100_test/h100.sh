@@ -1,8 +1,10 @@
 #!/bin/bash
-#SBATCH --partition=zen4_0768_h100x4
-#SBATCH --nodes=1
-#SBATCH --exclusive
-#SBATCH --time=02:00:00
+#SBATCH --job-name "myjob"
+#SBATCH -N 1
+#SBATCH --gres=gpu:4
+#SBATCH -p zen4_0768_h100x4
+#SBATCH --qos zen4_0768_h100x4
+#SBATCH --time=01:00:00
 
 export PYTHONUNBUFFERED=1
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1   # one thread per IS worker
