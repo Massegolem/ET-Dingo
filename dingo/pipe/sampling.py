@@ -23,6 +23,7 @@ from dingo.gw.inference.steps import GNPEKernelFactor
 from dingo.gw.inference.scan import chirp_mass_scan
 from dingo.pipe.default_settings import DENSITY_RECOVERY_SETTINGS
 from dingo.pipe.parser import create_parser
+from dingo.pipe.timing import StageTimer
 
 logger.name = "dingo_pipe"
 
@@ -124,8 +125,10 @@ class SamplingInput(Input):
         # self.time_marginalization = args.time_marginalization
         # self.jitter_time = args.jitter_time
 
-        self._load_event()
-        self._load_sampler()
+        self.timer = StageTimer("sampling")
+        with self.timer.segment("setup"):
+            self._load_event()
+            self._load_sampler()
 
     @property
     def sampling_seed(self):
@@ -326,21 +329,29 @@ class SamplingInput(Input):
                 "samples and training a new network to recover it."
             )
 
-            self._recover_log_prob_composed()
+            with self.timer.segment("density_recovery"):
+                self._recover_log_prob_composed()
 
         self.dingo_sampler.provenance_extra["sampling_seed"] = self.sampling_seed
-        self.dingo_sampler.run_sampler(self.num_samples, batch_size=self.batch_size)
-        self.dingo_sampler.to_hdf5(label=self.label, outdir=self.result_directory)
+        with self.timer.segment("sampling"):
+            self.dingo_sampler.run_sampler(self.num_samples, batch_size=self.batch_size)
+        with self.timer.segment("write"):
+            self.dingo_sampler.to_hdf5(label=self.label, outdir=self.result_directory)
+      
+            if self.n_parallel > 1:
+                logger.info(f"Splitting Result into {self.n_parallel} parts.")
+                result = self.dingo_sampler.to_result()
+                sub_results = result.split(self.n_parallel)
+                outdir = Path(self.result_directory)
+                outdir.mkdir(parents=True, exist_ok=True)
+                for n, r in enumerate(sub_results):
+                    file_name = self.label + f"_part{n}.hdf5"
+                    r.to_file(file_name=outdir / file_name)
 
-        if self.n_parallel > 1:
-            logger.info(f"Splitting Result into {self.n_parallel} parts.")
-            result = self.dingo_sampler.to_result()
-            sub_results = result.split(self.n_parallel)
-            outdir = Path(self.result_directory)
-            outdir.mkdir(parents=True, exist_ok=True)
-            for n, r in enumerate(sub_results):
-                file_name = self.label + f"_part{n}.hdf5"
-                r.to_file(file_name=outdir / file_name)
+        self.timer.write(
+            self.result_directory, self.label,
+            num_samples=self.num_samples, batch_size=self.batch_size,
+            device=str(self.device),)
 
 
 def create_sampling_parser():

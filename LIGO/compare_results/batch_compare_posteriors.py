@@ -475,10 +475,10 @@ if __name__ == "__main__":
     # (a note is printed in that case; see gwtc_group_used in summary.csv).
     GWTC_GROUP_PRIORITY = [
         # GWTC-2.1 / GWTC-3
-        "C01:Mixed", "C01:IMRPhenomXPHM", "C01:SEOBNRv4PHM",
+         "C01:IMRPhenomXPHM", "C01:Mixed", "C01:SEOBNRv4PHM",
         # GWTC-4 / GWTC-5
-        "C00:Mixed+XO4a", "C00:Mixed",
-        "C00:IMRPhenomXO4a", "C00:SEOBNRv5PHM", "C00:NRSur7dq4",
+        "C00:IMRPhenomXO4a", "C00:Mixed+XO4a", "C00:Mixed",
+        "C00:SEOBNRv5PHM", "C00:NRSur7dq4",
         "C00:IMRPhenomXPHM-SpinTaylor",
     ]
 

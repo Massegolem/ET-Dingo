@@ -23,6 +23,7 @@ from dingo.gw.domains import MultibandedFrequencyDomain
 from dingo.pipe.default_settings import IMPORTANCE_SAMPLING_SETTINGS
 from dingo.pipe.parser import create_parser
 from dingo.gw.result import Result
+from dingo.pipe.timing import StageTimer
 
 logger.name = "dingo_pipe"
 
@@ -108,8 +109,10 @@ class ImportanceSamplingInput(Input):
         # self.time_marginalization = args.time_marginalization
         # self.jitter_time = args.jitter_time
 
-        self._load_proposal()
-        self._load_event()  # Must be called after _load_proposal().
+        self.timer = StageTimer("importance_sampling")
+        with self.timer.segment("setup"):
+            self._load_proposal()
+            self._load_event()  # Must be called after _load_proposal().
         self.importance_sampling_settings = args.importance_sampling_settings
 
     @property
@@ -239,9 +242,10 @@ class ImportanceSamplingInput(Input):
                 )
 
     def run_sampler(self):
-        self.result.use_base_domain = self.importance_sampling_settings.get(
-            "use_base_domain", False
-        )
+        with self.timer.segment("proposal_extensions"):
+            self.result.use_base_domain = self.importance_sampling_settings.get(
+                "use_base_domain", False
+            )
 
         if self.prior_dict_updates:
             logger.info("Updating prior from network prior. Changes:")
@@ -270,24 +274,32 @@ class ImportanceSamplingInput(Input):
                 logger.info("Sampling calibration parameters")
             if synthetic_parameters_kwargs:
                 logger.info("Sampling synthetic phase")
-            self.result.sample_proposal_extensions(
-                calibration_sampling_kwargs=calibration_sampling_kwargs,
-                synthetic_parameters_kwargs=synthetic_parameters_kwargs,
+            with self.timer.segment("sample_proposal_extensions"):
+                self.result.sample_proposal_extensions(
+                    calibration_sampling_kwargs=calibration_sampling_kwargs,
+                    synthetic_parameters_kwargs=synthetic_parameters_kwargs,
+                )
+        with self.timer.segment("importance_sample"):
+            self.result.importance_sample(
+                num_processes=self.request_cpus,
+                time_marginalization_kwargs=self.importance_sampling_settings.get(
+                    "time_marginalization"
+                ),
+                phase_marginalization_kwargs=self.importance_sampling_settings.get(
+                    "phase_marginalization"
+                ),
+                calibration_marginalization_kwargs=self.calibration_marginalization_kwargs,
             )
 
-        self.result.importance_sample(
-            num_processes=self.request_cpus,
-            time_marginalization_kwargs=self.importance_sampling_settings.get(
-                "time_marginalization"
-            ),
-            phase_marginalization_kwargs=self.importance_sampling_settings.get(
-                "phase_marginalization"
-            ),
-            calibration_marginalization_kwargs=self.calibration_marginalization_kwargs,
-        )
-
         self.result.print_summary()
-        self.result.to_file(os.path.join(self.result_directory, self.label + ".hdf5"))
+        with self.timer.segment("write"):
+            self.result.to_file(os.path.join(self.result_directory, self.label + ".hdf5"))
+
+        self.timer.write(
+            self.result_directory, self.label,
+            num_samples=len(self.result.samples),
+            num_processes=self.request_cpus,
+        )
 
     @property
     def priors(self):
