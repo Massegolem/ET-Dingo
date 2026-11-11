@@ -72,11 +72,11 @@ training:
     freeze_rb_layer: True
     optimizer:
       type: adam
-      lr: 7.0e-5
+      lr: 8.5e-5
     scheduler:
       type: cosine
       T_max: 300
-    batch_size: 8192 
+    batch_size: 12288 
     # early_stopping:
     #   patience: 10
     #   delta: 0.0
@@ -88,11 +88,11 @@ training:
     freeze_rb_layer: False
     optimizer:
       type: adam
-      lr: 1.4e-5
+      lr: 1.7e-5
     scheduler:
       type: cosine
       T_max: 150
-    batch_size: 8192
+    batch_size: 12288
     # early_stopping:
     #   patience: 10
     #   delta: 0.0
