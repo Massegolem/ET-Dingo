@@ -457,9 +457,9 @@ def batch_compare(dingo_base, gwtc_dir, output_dir,
 
 if __name__ == "__main__":
     # --- edit these paths ---------------------------------------------
-    DINGO_BASE = "/home/tpausch/ET-Dingo/LIGO/O4/T4"   # contains outdir_GW*/result/
+    DINGO_BASE = "/home/tpausch/ET-Dingo/LIGO/O4/T4_low_sample"   # contains outdir_GW*/result/
     GWTC_DIR = "/scratch/tpausch/zenodo"
-    OUTPUT_DIR = "/home/tpausch/ET-Dingo/LIGO/O4/T4/compare_results"
+    OUTPUT_DIR = "/home/tpausch/ET-Dingo/LIGO/O4/T4_low_sample/compare_results"
     # ---------------------------------------------------------------------
 
     # GWTC-2.1 / GWTC-3 ship two files per event: "nocosmo" or "cosmo".
