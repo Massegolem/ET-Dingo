@@ -8,7 +8,7 @@
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=22      # up from 22
-#SBATCH --threads-per-core=2
+#SBATCH --threads-per-core=1
 #SBATCH --mem=400G              # up from 190750M
 #SBATCH --job-name=dingo_LIGO_O4_T8_continue
 #SBATCH --output=LIGO_O4_T8_continue.out
@@ -30,7 +30,7 @@ mkdir -p /local/tpausch/LIGO_O4_T8_low_mass
 #time dingo_train --settings_file $DATA/ET-Dingo/ET-Dingo/LIGO/O3/T8/train_settings.yaml --train_dir $DATA/models/LIGO_O3_T8
 
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-time dingo_train --checkpoint $DATA/models/LIGO_O3_T8/model_latest.pt --train_dir $DATA/models/LIGO_O3_T8
+time dingo_train --checkpoint $DATA/models/LIGO_O4_T8_low_mass/model_latest.pt --train_dir $DATA/models/LIGO_O4_T8_low_mass 
 
 
 rm -rf /local/tpausch/LIGO_O4_T8_low_mass
