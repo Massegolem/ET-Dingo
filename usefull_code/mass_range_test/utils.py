@@ -372,7 +372,7 @@ def make_injection_plotter_detection(
             if in_band_only.value:
                 selection_description = r"ET in-band"
                 if snr_values is not None:
-                    selection_description += f", SNR $\ge$ {minimum_snr.value:g}"
+                    selection_description += f", SNR $\geq$ {minimum_snr.value:g}"
                     missing_snr_count = int((
                         in_band_values & ~np.isfinite(snr_values)
                     ).sum())
