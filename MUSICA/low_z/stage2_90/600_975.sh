@@ -8,7 +8,7 @@
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=22      # up from 22
-#SBATCH --threads-per-core=2
+#SBATCH --threads-per-core=1
 #SBATCH --mem=250G              # up from 190750M
 #SBATCH --job-name=stage2_600_975
 #SBATCH --output=stage2_600_975.out

@@ -1,5 +1,5 @@
 data:
-  waveform_dataset_path: /data/fs201368/tp41139/waveforms/waveform_dataset_T8_imbh.hdf5  # Contains intrinsic waveforms
+  waveform_dataset_path: /scratch/fs201368/tp41139/waveforms/waveform_dataset_T8_imbh.hdf5  # Contains intrinsic waveforms
   train_fraction: 0.95
   domain_update:
     f_min: 6.0
@@ -18,7 +18,7 @@ data:
   ref_time: 1126259462.391
   chirp_prior_conditioning:
     kernel:
-      chirp_mass: bilby.core.prior.Uniform(minimum=-120.0, maximum=120.0)
+      chirp_mass: bilby.core.prior.Uniform(minimum=-45.0, maximum=45.0)
   inference_parameters:
   - delta_chirp_mass
   - mass_ratio
