@@ -578,8 +578,8 @@ if __name__ == "__main__":
     # (label shown in legend / annotation, base folder containing outdir_GW*/result/, [colour])
     # The FIRST entry defines which events are processed.
     DINGO_RUNS = [
-        ("DINGO (low sample)", "/home/tpausch/ET-Dingo/LIGO/O4/T4_low_sample"),
-        ("DINGO (high sample)",           "/home/tpausch/ET-Dingo/LIGO/O4/T4"),
+        ("DINGO T4", "/home/tpausch/ET-Dingo/LIGO/O4/T4"),
+        ("DINGO T8",           "/home/tpausch/ET-Dingo/LIGO/O4/T8_low_mass"),
     ]
     GWTC_DIR = "/scratch/tpausch/zenodo"
     OUTPUT_DIR = "/home/tpausch/ET-Dingo/LIGO/O4/T4_low_sample/compare_results_2runs"
