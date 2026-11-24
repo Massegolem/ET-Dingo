@@ -1,0 +1,15 @@
+name = 'ET_2026a_HF'
+power_spectral_density = PowerSpectralDensity(psd_file='et_10_psd_HF.txt')
+length = 10
+minimum_frequency = 6
+maximum_frequency = 2048
+latitude = 43.6296
+longitude = 10.5034
+elevation = 51.884
+xarm_azimuth = 19.433
+yarm_azimuth = 319.433
+xarm_tilt = 0.0
+yarm_tilt = 0.0
+shape = 'Triangle'
+
+
