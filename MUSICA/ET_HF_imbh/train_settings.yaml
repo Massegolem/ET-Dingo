@@ -72,7 +72,7 @@ model:
 training:
   stage_0:
     epochs: 400
-    asd_dataset_path: /scratch/fs201368/tp41139/ASD/asds_ET_10km_2026a_HF_T_8_f6_256.hdf5 # this should just contain a single fiducial ASD per detector for pretraining
+    asd_dataset_path: /scratch/fs201368/tp41139/ASD/asds_ET_10km_2026a_HF_T8_f6_256.hdf5  # this should just contain a single fiducial ASD per detector for pretraining
     #asd_dataset_path: /scratch/tpausch/ASD/asds_ET_10km_2026a_HF_T8_f6_256.hdf5 # this should just contain a single fiducial ASD per detector for pretraining
     freeze_rb_layer: True
     optimizer:
