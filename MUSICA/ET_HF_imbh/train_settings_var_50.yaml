@@ -94,7 +94,7 @@ training:
 local:
   device: cuda # Change this to 'cuda' for training on a GPU.
   float32_matmul_precision: high
-  num_workers: 18  # num_workers >0 does not work on Mac, see https://stackoverflow.com/questions/64772335/pytorch-w-parallelnative-cpp206
+  num_workers: 38  # num_workers >0 does not work on Mac, see https://stackoverflow.com/questions/64772335/pytorch-w-parallelnative-cpp206
   runtime_limits:
     max_time_per_run: 3600000
     max_epochs_per_run: 500

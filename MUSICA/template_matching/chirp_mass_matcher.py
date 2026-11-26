@@ -47,7 +47,8 @@ class BankConfig:
     m2_range: tuple = (30.0, 1500.0)
     d_l_ref: float = 1000.0
     # Gitter
-    dlog_mc: float = 0.03                      # ~3 % Schritt in Mc
+    dlog_mc: float = 0.03                      # ~3 % Schritt in Mc (log-Gitter, falls mc_step None)
+    mc_step: float = None                      # z.B. 10.0 -> aequidistantes Mc-Gitter in M_sun
     mass_ratios: tuple = (0.125, 0.2, 0.35, 0.6, 1.0)
     spins: tuple = (-0.6, 0.0, 0.6)            # chi-Werte (Prior: [-0.9, 0.9])
     spin_mode: str = "pairs"                   # "pairs": alle (chi_1, chi_2) aus spins^2
@@ -95,9 +96,13 @@ def component_masses(mc, q):
 
 def make_grid(cfg: BankConfig) -> dict:
     """Gitter ueber den Prior-Support; Constraints auf mass_1/mass_2 werden angewendet."""
-    n_mc = int(np.floor(np.log(cfg.mc_max / cfg.mc_min) / cfg.dlog_mc)) + 1
-    mc_axis = cfg.mc_min * np.exp(np.arange(n_mc) * cfg.dlog_mc)
-    mc_axis = mc_axis[mc_axis <= cfg.mc_max * (1 + 1e-9)]
+    if cfg.mc_step:
+        n_mc = int(np.floor((cfg.mc_max - cfg.mc_min) / cfg.mc_step + 1e-9)) + 1
+        mc_axis = cfg.mc_min + np.arange(n_mc) * cfg.mc_step
+    else:
+        n_mc = int(np.floor(np.log(cfg.mc_max / cfg.mc_min) / cfg.dlog_mc)) + 1
+        mc_axis = cfg.mc_min * np.exp(np.arange(n_mc) * cfg.dlog_mc)
+        mc_axis = mc_axis[mc_axis <= cfg.mc_max * (1 + 1e-9)]
 
     rows = []
     for i, mc in enumerate(mc_axis):
@@ -199,6 +204,20 @@ def build_bank(cfg: BankConfig, generate_h0, n_workers: int = 1, verbose: bool =
     return np.stack(rows), grid
 
 
+def _peak(prof, axis, dlog, step=None):
+    """argmax und Parabel-Verfeinerung eines Profils: log-Gitter (dlog) oder lineares (step)."""
+    i = int(np.argmax(prof))
+    delta = 0.0
+    if 0 < i < len(prof) - 1:
+        y0, y1, y2 = prof[i - 1], prof[i], prof[i + 1]
+        den = y0 - 2 * y1 + y2
+        if den < 0:
+            delta = float(np.clip(0.5 * (y0 - y2) / den, -1.0, 1.0))
+    if step:
+        return i, float(axis[i] + delta * step)
+    return i, float(axis[i] * np.exp(delta * dlog))
+
+
 class TemplateBank:
     def __init__(self, h, grid, cfg: BankConfig, device="cuda"):
         self.cfg = cfg
@@ -213,6 +232,15 @@ class TemplateBank:
         self.mc_index = torch.as_tensor(grid["mc_index"], device=self.device)
         self.mc_axis = np.asarray(grid["mc_axis"])
         self.n_mc = len(self.mc_axis)
+        # Gesamtmassen-Profil (Diagnose: Merger-Ringdown legt M fest, Mc ist entartet)
+        m1, m2 = component_masses(np.asarray(grid["chirp_mass"]), np.asarray(grid["mass_ratio"]))
+        mt = m1 + m2
+        lo = float(mt.min())
+        n_m = int(np.floor(np.log(mt.max() / lo) / cfg.dlog_mc)) + 1
+        self.m_axis = lo * np.exp(np.arange(n_m) * cfg.dlog_mc)
+        idx = np.clip(np.round(np.log(mt / lo) / cfg.dlog_mc).astype(np.int64), 0, n_m - 1)
+        self.m_index = torch.as_tensor(idx, device=self.device)
+        self.n_m = n_m
 
     def __len__(self):
         return self.h.shape[0]
@@ -301,14 +329,11 @@ class ChirpMassMatcher:
         axis = self.bank.mc_axis
         i = int(np.argmax(prof))
 
-        # Parabel in log(Mc) um das Maximum
-        delta = 0.0
-        if 0 < i < n_mc - 1:
-            y0, y1, y2 = prof[i - 1], prof[i], prof[i + 1]
-            den = y0 - 2 * y1 + y2
-            if den < 0:
-                delta = float(np.clip(0.5 * (y0 - y2) / den, -1.0, 1.0))
-        mc_ref = float(axis[i] * np.exp(delta * self.cfg.dlog_mc))
+        i, mc_ref = _peak(prof, axis, self.cfg.dlog_mc, step=self.cfg.mc_step)
+
+        profm = torch.full((self.bank.n_m,), -float("inf"), device=self.dev)
+        profm = profm.scatter_reduce(0, self.bank.m_index, rho2, reduce="amax").cpu().numpy()
+        _, mt_ref = _peak(profm, self.bank.m_axis, self.cfg.dlog_mc)
 
         # Likelihood-artig gewichteter Mittelwert in log(Mc)
         wgt = np.exp(-(prof.max() - prof) / (2.0 * temperature))
@@ -317,6 +342,7 @@ class ChirpMassMatcher:
         j = int(torch.argmax(rho2))
         g = self.bank.grid
         return dict(mc_argmax=float(axis[i]), mc_refined=mc_ref, mc_weighted=mc_w,
+                    mt_refined=mt_ref,
                     snr_best=float(np.sqrt(prof[i])),
                     q_best=float(g["mass_ratio"][j]), chi_1_best=float(g["chi_1"][j]),
                     chi_2_best=float(g["chi_2"][j]), theta_jn_best=float(g["theta_jn"][j]),
