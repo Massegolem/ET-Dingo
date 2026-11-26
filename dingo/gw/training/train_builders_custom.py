@@ -1,0 +1,443 @@
+import copy
+from typing import List, Optional
+
+import numpy as np
+import torch.multiprocessing
+import torchvision
+from bilby.gw.detector import InterferometerList
+from threadpoolctl import threadpool_limits
+
+from dingo.core.utils import *
+from dingo.gw.dataset.waveform_dataset import WaveformDataset
+from dingo.gw.domains import build_domain
+from dingo.gw.gwutils import *
+from dingo.gw.noise.asd_dataset import ASDDataset
+from dingo.gw.prior import default_inference_parameters
+from dingo.gw.SVD import SVDBasis
+from dingo.gw.transforms import (
+    AddWhiteNoiseComplex,
+    CropMaskStrainRandom,
+    GetDetectorTimes,
+    ChirpPriorConditioning,
+    chirp_prior_conditioning_settings,
+    GNPECoalescenceTimes,
+    MaskDetectors,
+    MaskFrequencyNotches,
+    MaskFrequencyRange,
+    MaskRandomTokens,
+    NormalizePosition,
+    ProjectOntoDetectors,
+    RepackageStrainsAndASDS,
+    SampleExtrinsicParameters,
+    SampleNoiseASD,
+    SelectStandardizeRepackageParameters,
+    StrainTokenization,
+    UnpackDict,
+    WhitenAndScaleStrain,
+)
+
+
+def build_dataset(
+    data_settings: dict,
+    leave_waveforms_on_disk: Optional[bool] = False,
+) -> WaveformDataset:
+    """Build a dataset based on a settings dictionary. This should contain the path of
+    a saved waveform dataset.
+
+    This function also truncates the dataset as necessary.
+
+    Parameters
+    ----------
+    data_settings : dict
+    leave_waveforms_on_disk: bool
+        If provided, the values associated with the waveforms will not be loaded into memory during initialization.
+        Instead, they will be loaded from disk when the dataset is accessed. This is useful for reducing the memory
+        load of large datasets, but can slow down data preprocessing.
+
+    Returns
+    -------
+    WaveformDataset
+    """
+
+    # Build and truncate datasets
+    domain_update = data_settings.get("domain_update", None)
+    wfd = WaveformDataset(
+        file_name=data_settings["waveform_dataset_path"],
+        precision="single",
+        domain_update=domain_update,
+        svd_size_update=data_settings.get("svd_size_update"),
+        leave_waveforms_on_disk=leave_waveforms_on_disk,
+    )
+    return wfd
+
+
+def set_train_transforms(
+    wfd: WaveformDataset,
+    data_settings: dict,
+    asd_dataset_path: str,
+    omit_transforms: Optional[List[type]] = None,
+    print_output: bool = True,
+) -> None:
+    """
+    Set the transform attribute of a waveform dataset based on a settings dictionary.
+    The transform takes waveform polarizations, samples random extrinsic parameters,
+    projects to detectors, adds noise, and formats the data for input to the neural
+    network. It also implements optional GNPE detector time shifts
+    (`gnpe_time_shifts`) and prior conditioning on the chirp mass
+    (`chirp_prior_conditioning`, DINGO-BNS).
+
+    Note that the WaveformDataset is modified in-place, so this function returns nothing.
+
+    Parameters
+    ----------
+    wfd : WaveformDataset
+    data_settings : dict
+    asd_dataset_path : str
+        Path corresponding to the ASD dataset used to generate noise.
+    omit_transforms :
+        List of sub-transforms to omit from the full composition.
+    print_output : bool
+        Whether to write informational messages to stdout.  Set to False for
+        non-primary DDP ranks.
+    """
+
+    if print_output:
+        print(f"Setting train transforms.")
+        if omit_transforms is not None:
+            print("Omitting \n\t" + "\n\t".join([t.__name__ for t in omit_transforms]))
+
+
+
+
+
+    #     # Build detector objects
+    # #####################################################################################################
+    # #ifo_list = InterferometerList(data_settings["detectors"]) # This is the old way of building the ifo list, which relies on bilby's built-in interferometer list. This is fine for standard detectors, but it does not allow for custom detectors, such as those with different f_min and f_max values. The new way of building the ifo list is to build it based on the domain of the waveform dataset, which ensures that the ifo list is consistent with the waveforms. This also allows for custom detectors to be easily incorporated.
+    # et_detectors = [d for d in data_settings["detectors"] if d.startswith('ET-')]
+    # other_detectors = [d for d in data_settings["detectors"] if not d.startswith('ET-')]
+
+    # if len(et_detectors) > 0:
+    #     full_triangle = InterferometerList(['ET-'])  # loads all 3
+    #     # pick only the ones requested
+    #     selected = [ifo for ifo in full_triangle if ifo.name in et_detectors]
+    #     ifo_list = InterferometerList([]) 
+    #     for ifo in selected:
+    #         ifo_list.append(ifo)
+    #     for name in other_detectors:
+    #         ifo_list.append(get_empty_interferometer(name))
+    # else:
+    #     ifo_list = InterferometerList(data_settings["detectors"])
+    # #####################################################################################################
+
+    ifo_list = InterferometerList(data_settings["detectors"])
+    ifo_names = [ifo.name for ifo in ifo_list]
+
+    # By passing the wfd domain when instantiating the noise dataset, this ensures the
+    # domains will match. In particular, it truncates the ASD dataset beyond the new
+    # f_max, and sets it to 1 below f_min.
+    asd_dataset = ASDDataset(
+        asd_dataset_path,
+        ifos=ifo_names,
+        precision="single",
+        domain_update=wfd.domain.domain_dict,
+    )
+    assert wfd.domain == asd_dataset.domain
+    domain = wfd.domain
+
+    extrinsic_prior_dict = get_extrinsic_prior_dict(data_settings["extrinsic_prior"])
+    if data_settings["inference_parameters"] == "default":
+        data_settings["inference_parameters"] = default_inference_parameters
+
+    ref_time = data_settings["ref_time"]
+
+    # Build transforms.
+    transforms = [
+        SampleExtrinsicParameters(extrinsic_prior_dict),
+        GetDetectorTimes(ifo_list, ref_time),
+    ]
+
+    extra_context_parameters = []
+    if "gnpe_time_shifts" in data_settings:
+        d = data_settings["gnpe_time_shifts"]
+        transforms.append(
+            GNPECoalescenceTimes(
+                ifo_list,
+                d["kernel"],
+                d["exact_equiv"],
+                inference=False,
+            )
+        )
+        extra_context_parameters += transforms[-1].context_parameters
+    d = chirp_prior_conditioning_settings(data_settings)
+    if d is not None:
+        # Heterodyne the polarizations at a blurred chirp mass (the proxy, on which the
+        # network conditions) and infer the offset delta_chirp_mass. The heterodyne
+        # commutes with the detector projection, whitening, and (white) noise below.
+        transforms.append(
+            ChirpPriorConditioning(d["kernel"], domain, d.get("order", 0))
+        )
+        extra_context_parameters += transforms[-1].context_parameters
+
+    # Add the GNPE context to context_parameters the first time the transforms are
+    # constructed. We do not want to overwrite the ordering of the parameters in
+    # subsequent runs.
+    if "context_parameters" not in data_settings:
+        data_settings["context_parameters"] = []
+    for p in extra_context_parameters:
+        if p not in data_settings["context_parameters"]:
+            data_settings["context_parameters"].append(p)
+    if "tokenization" in data_settings and data_settings["context_parameters"]:
+        raise NotImplementedError(
+            "Tokenization with context parameters (GNPE proxies or other "
+            f"context_parameters {data_settings['context_parameters']}) is not yet "
+            "supported: the transformer embedding network does not take them."
+        )
+    if "tokenization" in data_settings and "random_strain_cropping" in data_settings:
+        raise ValueError(
+            "Tokenization with random_strain_cropping is not supported: a tokenized "
+            "network learns variable frequency ranges through token masking; use "
+            "tokenization.mask_frequency_range instead."
+        )
+
+    # If the standardization factors have already been set, use those. Otherwise,
+    # calculate them, and save them within the data settings.
+    #
+    # Standardizations are calculated at this point because the present set of
+    # transforms is sufficient for generating samples of all regression and context
+    # parameters.
+    try:
+        standardization_dict = data_settings["standardization"]
+        if print_output:
+            print("Using previously-calculated parameter standardizations.")
+    except KeyError:
+        if print_output:
+            print("Calculating new parameter standardizations.")
+        standardization_dict = get_standardization_dict(
+            extrinsic_prior_dict,
+            wfd,
+            data_settings["inference_parameters"] + data_settings["context_parameters"],
+            torchvision.transforms.Compose(transforms),
+        )
+        data_settings["standardization"] = standardization_dict
+
+    transforms.append(ProjectOntoDetectors(ifo_list, domain, ref_time))
+    transforms.append(SampleNoiseASD(asd_dataset))
+    transforms.append(WhitenAndScaleStrain(domain.noise_std))
+    # We typically add white detector noise. For debugging purposes, this can be turned
+    # off with zero_noise option in data_settings.
+    if not data_settings.get("zero_noise", False):
+        transforms.append(AddWhiteNoiseComplex())
+    transforms.append(
+        SelectStandardizeRepackageParameters(
+            {
+                k: data_settings[k]
+                for k in ["inference_parameters", "context_parameters"]
+            },
+            standardization_dict,
+        )
+    )
+    transforms.append(RepackageStrainsAndASDS(ifo_names, first_index=domain.min_idx))
+    if "random_strain_cropping" in data_settings:
+        transforms.append(
+            CropMaskStrainRandom(domain, **data_settings["random_strain_cropping"])
+        )
+    if "tokenization" in data_settings:
+        tok = data_settings["tokenization"]
+        transforms.append(
+            StrainTokenization(
+                domain=domain,
+                detectors=data_settings["detectors"],
+                token_size=tok.get("token_size"),
+                num_tokens_per_block=tok.get("num_tokens_per_block"),
+                drop_last_token=tok.get("drop_last_token", False),
+            )
+        )
+        if "mask_random_tokens" in tok:
+            transforms.append(MaskRandomTokens(**tok["mask_random_tokens"]))
+        if "mask_detectors" in tok:
+            transforms.append(
+                MaskDetectors(data_settings["detectors"], **tok["mask_detectors"])
+            )
+        if "mask_frequency_range" in tok:
+            transforms.append(
+                MaskFrequencyRange(domain=domain, **tok["mask_frequency_range"])
+            )
+        if "mask_frequency_notches" in tok:
+            transforms.append(
+                MaskFrequencyNotches(domain=domain, **tok["mask_frequency_notches"])
+            )
+        # Recorded in the settings so the saved network states what it was trained
+        # with; the loader backfills False for networks saved before this key.
+        tok["normalize_position"] = tok.get("normalize_position", True)
+        if tok["normalize_position"]:
+            # After all mask transforms, which compare positions in Hz.
+            transforms.append(NormalizePosition(domain.f_min, domain.f_max))
+
+    selected_keys = ["inference_parameters", "waveform"]
+    if "tokenization" in data_settings:
+        selected_keys += ["position", "token_mask"]
+    if data_settings["context_parameters"]:
+        selected_keys += ["context_parameters"]
+
+    transforms.append(UnpackDict(selected_keys=selected_keys))
+
+    # Drop transforms that are not desired. This is useful for generating, e.g.,
+    # noise-free data, or for producing data not formatted for input to the network.
+    if omit_transforms is not None:
+        transforms = [t for t in transforms if type(t) not in omit_transforms]
+
+    wfd.transform = torchvision.transforms.Compose(transforms)
+
+
+def build_svd_for_embedding_network(
+    wfd: WaveformDataset,
+    data_settings: dict,
+    asd_dataset_path: str,
+    size: int,
+    num_training_samples: int,
+    num_validation_samples: int,
+    num_workers: int = 0,
+    batch_size: int = 1000,
+    out_dir: Optional[str] = None,
+) -> List[np.ndarray]:
+    """
+    Construct SVD matrices V based on clean waveforms in each interferometer. These
+    will be used to seed the weights of the initial projection part of the embedding
+    network.
+
+    It first generates a number of training waveforms, and then produces the SVD.
+
+    Parameters
+    ----------
+    wfd : WaveformDataset
+    data_settings : dict
+    asd_dataset_path : str
+        Training waveforms will be whitened with respect to these ASDs.
+    size : int
+        Number of basis elements to include in the SVD projection.
+    num_training_samples : int
+    num_validation_samples : int
+    num_workers : int
+        Ignored: the data loader always uses num_workers=0, see below.
+    batch_size : int
+    out_dir : str
+        SVD performance diagnostics are saved here.
+
+    Returns
+    -------
+    list of numpy arrays
+        The V matrices for each interferometer. They are ordered as in data_settings[
+        'detectors'].
+    """
+    # Building the transforms can alter the data_settings dictionary. We do not want
+    # the construction of the SVD to impact this, so begin with a fresh copy of this
+    # dictionary.
+    data_settings = copy.deepcopy(data_settings)
+
+    # This is needed to prevent an occasional error when loading a large dataset into
+    # memory using a dataloader. This removes a limitation on the number of "open files".
+    old_sharing_strategy = torch.multiprocessing.get_sharing_strategy()
+    torch.multiprocessing.set_sharing_strategy("file_system")
+
+    # Fix the luminosity distance to a standard value, just in order to generate the SVD.
+    data_settings["extrinsic_prior"]["luminosity_distance"] = "100.0"
+
+    # Build the dataset, but with certain transforms omitted. In particular, we want to
+    # build the SVD based on zero-noise waveforms. They should still be whitened, and
+    # heterodyned when the network is (the basis must span the network's input).
+    set_train_transforms(
+        wfd,
+        data_settings,
+        asd_dataset_path,
+        omit_transforms=[
+            AddWhiteNoiseComplex,
+            RepackageStrainsAndASDS,
+            SelectStandardizeRepackageParameters,
+            UnpackDict,
+            CropMaskStrainRandom,
+        ],
+    )
+
+    print("Generating waveforms for embedding network SVD initialization.")
+    time_start = time.time()
+    ifos = list(wfd[0]["waveform"].keys())
+    waveform_len = len(wfd[0]["waveform"][ifos[0]])
+    num_waveforms = num_training_samples + num_validation_samples
+    if num_waveforms > len(wfd):
+        raise IndexError(
+            f"Requested {num_waveforms} samples for generating SVD for embedding "
+            f"network, but waveform dataset only contains {len(wfd)} samples."
+        )
+    waveforms = {
+        ifo: np.empty((num_waveforms, waveform_len), dtype=np.complex128)
+        for ifo in ifos
+    }
+    parameters = pd.DataFrame()
+
+    # num_workers is pinned to 0: worker processes corrupt the BLAS state and
+    # make scipy's SVD segfault (see PR #349 / issue #338).
+    loader = DataLoader(
+        wfd,
+        batch_size=batch_size,
+        num_workers=0,
+        worker_init_fn=fix_random_seeds,
+    )
+    with threadpool_limits(limits=1, user_api="blas"):
+        for idx, data in enumerate(loader):
+            # This is for handling the last batch, which may otherwise push the total
+            # number of samples above the number requested.
+            lower = idx * batch_size
+            n = min(batch_size, num_waveforms - lower)
+
+            parameters = pd.concat(
+                [parameters, pd.DataFrame(data["parameters"]).iloc[:n]],
+                ignore_index=True,
+            )
+            strain_data = data["waveform"]
+            for ifo, strains in strain_data.items():
+                waveforms[ifo][lower : lower + n] = strains[:n]
+            if lower + n == num_waveforms:
+                break
+    print(f"...done. This took {time.time() - time_start:.0f} s.")
+
+    # Reset the standard sharing strategy.
+    torch.multiprocessing.set_sharing_strategy(old_sharing_strategy)
+
+    print("Generating SVD basis for ifo:")
+    time_start = time.time()
+    basis_dict = {}
+    for ifo in ifos:
+        basis = SVDBasis()
+        basis.generate_basis(waveforms[ifo][:num_training_samples], size)
+        basis_dict[ifo] = basis
+        print(f"...{ifo} done.")
+    print(f"...this took {time.time() - time_start:.0f} s.")
+
+    if out_dir is not None:
+        print(f"Testing SVD basis matrices.")
+        for ifo, basis in basis_dict.items():
+            print(f"...{ifo}:")
+            basis.compute_test_mismatches(
+                waveforms[ifo][num_training_samples:],
+                parameters=parameters.iloc[num_training_samples:].reset_index(
+                    drop=True
+                ),
+                verbose=True,
+            )
+            basis.to_file(os.path.join(out_dir, f"svd_{ifo}.hdf5"))
+    print("Done")
+
+    # Return V matrices in standard order. Drop the elements below domain.min_idx,
+    # since the neural network expects data truncated below these. The dropped elements
+    # should be 0.
+    print(f"Truncating SVD matrices below index {wfd.domain.min_idx}.")
+    print("...V matrix shapes:")
+    V_rb_list = []
+    for ifo in ifos:
+        V = basis_dict[ifo].V
+        assert np.allclose(V[: wfd.domain.min_idx], 0)
+        V = V[wfd.domain.min_idx :]
+        print("      " + str(V.shape))
+        V_rb_list.append(V)
+    print("\n")
+    return V_rb_list

@@ -10,8 +10,8 @@
 #SBATCH --cpus-per-task=22      # up from 22
 #SBATCH --threads-per-core=2
 #SBATCH --mem=250G              # up from 190750M
-#SBATCH --job-name=ET_HF_imbh
-#SBATCH --output=ET_HF_imbh.out
+#SBATCH --job-name=ET_HF_imbh_var_5
+#SBATCH --output=ET_HF_imbh_var_5.out
 
 
 export OMP_NUM_THREADS=1
@@ -23,12 +23,12 @@ eval "$(conda shell.bash hook)"
 conda activate $DATA/conda_envs/ET-DINGO
 
 
-mkdir -p /local/tpausch/ET_HF_imbh
+mkdir -p /local/tpausch/ET_HF_imbh_var_5
 
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-time dingo_train --settings_file train_settings_ET_HF_imbh.yaml --train_dir $DATA/models/ET_HF_imbh
+time dingo_train --settings_file train_settings_var_5.yaml --train_dir $DATA/models/ET_HF_imbh_var_5
 
-rm -rf /local/tpausch/ET_HF_imbh
+rm -rf /local/tpausch/ET_HF_imbh_var_5
 
 
 
