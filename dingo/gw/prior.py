@@ -7,8 +7,10 @@ from bilby.gw.conversion import (
 )
 from bilby.core.prior import Uniform, Sine, Cosine
 
+from dingo.gw.source_frame import SourceFrameMassConstraints
+
 import numpy as np
-from typing import Dict, Set, Any
+from typing import Dict, Set, Any, Optional
 import warnings
 
 # Silence INFO and WARNING messages from bilby
@@ -145,7 +147,33 @@ default_inference_parameters = [
 ]
 
 
-def build_prior_with_defaults(prior_settings: Dict[str, str]):
+class BBHSourceFramePriorDict(BBHPriorDict):
+    """
+    BBHPriorDict whose conversion function also generates the redshift and the
+    source-frame masses, so that Constraint priors on mass_1_source, mass_2_source,
+    total_mass_source or chirp_mass_source are actually evaluated. (With the plain
+    BBHPriorDict they would be silently ignored: bilby skips constraint keys that the
+    conversion function does not produce.)
+    """
+
+    def __init__(self, dictionary=None, source_frame=None, **kwargs):
+        self.source_frame = source_frame
+        super().__init__(dictionary=dictionary, **kwargs)
+
+    def default_conversion_function(self, sample):
+        out_sample = super().default_conversion_function(sample)
+        if self.source_frame is not None and "luminosity_distance" in out_sample:
+            out_sample.update(self.source_frame.source_frame_masses(out_sample))
+        return out_sample
+
+    def copy(self):
+        return self.__class__(dictionary=dict(self), source_frame=self.source_frame)
+
+
+def build_prior_with_defaults(
+    prior_settings: Dict[str, str],
+    source_frame_mass_constraints: Optional[dict] = None,
+):
     """
     Generate BBHPriorDict based on dictionary of prior settings,
     allowing for default values.
@@ -159,6 +187,11 @@ def build_prior_with_defaults(prior_settings: Dict[str, str]):
             * a string for a custom prior, e.g.,
                "Uniform(minimum=10.0, maximum=80.0, name=None, latex_label=None, unit=None, boundary=None)"
 
+    source_frame_mass_constraints: dict, optional
+        The ``source_frame_mass_constraints`` entry of the train settings. If given,
+        the corresponding Constraint priors are added, and the returned prior
+        generates source-frame masses to evaluate them.
+
     Depending on the particular prior choices the dimensionality of a
     parameter sample obtained from the returned GWPriorDict will vary.
     """
@@ -168,7 +201,22 @@ def build_prior_with_defaults(prior_settings: Dict[str, str]):
         if v == "default":
             full_prior_settings[k] = default_intrinsic_dict[k]
 
-    return BBHPriorDict(full_prior_settings)
+    if not source_frame_mass_constraints:
+        return BBHPriorDict(full_prior_settings)
+
+    prior = BBHSourceFramePriorDict(full_prior_settings)
+    if "luminosity_distance" not in prior:
+        raise ValueError(
+            "source_frame_mass_constraints require a luminosity_distance prior."
+        )
+    # Size the redshift table from the same distance prior as at train time, so the
+    # table (and hence every redshift) is identical in training and inference.
+    prior.source_frame = SourceFrameMassConstraints.from_settings(
+        source_frame_mass_constraints,
+        max_distance=prior["luminosity_distance"].maximum,
+    )
+    prior.update(prior.source_frame.prior_constraints())
+    return prior
 
 
 def split_off_extrinsic_parameters(theta):

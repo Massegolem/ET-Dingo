@@ -39,6 +39,10 @@ data:
 #   kernel:
 #     chirp_mass: bilby.core.prior.Uniform(minimum=-0.005, maximum=0.005)
 # context_parameters: [ra, dec]  # Further conditioning parameters, pinned per event at inference.
+# source_frame_mass_constraints:  # Bounds on source-frame masses; see below.
+#   mass_1_source:
+#     maximum: 100.0
+#   # z_max: 50.0  # optional; by default chosen from the luminosity_distance prior
   inference_parameters: default
 
 model:
@@ -129,6 +133,10 @@ The train settings file is grouped into **four sections:**
 ### `data_settings`
 
 These settings point to a saved dataset of waveform polarizations and describe the transforms to obtain detector waveforms. A detailed description of these settings is available [here](training_transforms.ipynb#building-the-transforms).
+
+#### Source-frame mass constraints
+
+The waveform dataset samples detector-frame masses, and the luminosity distance is only drawn at train time, so a bound on a *source-frame* mass couples the two priors. `source_frame_mass_constraints` sets such bounds (`minimum` and/or `maximum`) on any of `mass_1_source`, `mass_2_source`, `total_mass_source` and `chirp_mass_source`; an optional `cosmology` key selects the cosmology (bilby's default, Planck15, otherwise). Distances are converted to redshifts with a lookup table whose range is chosen automatically to cover twice the maximum of the `luminosity_distance` prior; an optional `z_max` key sets its upper redshift explicitly (needed only for a prior without a finite maximum). The network is then trained on the constrained joint prior: each waveform is kept with the probability that a distance drawn from the `luminosity_distance` prior satisfies the bounds, and the distance is drawn from that prior truncated to the allowed range. At inference the same bounds are part of the model prior as `Constraint`s, so importance sampling and injections use the same prior. Thinning discards waveforms, so choose the detector-frame mass prior of the dataset to match: the largest useful detector-frame mass is the source-frame maximum times 1 + z at the maximum distance.
 
 ### `model`
 

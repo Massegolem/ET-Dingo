@@ -66,6 +66,9 @@ class WaveformDataset(DingoDataset, torch.utils.data.Dataset):
         self.decompression_transform = None
         self.file_handle = None
         self.precision = precision
+        # Maps dataset indices to rows of the HDF5 file when polarizations are left on
+        # disk and the dataset has been subset with select_samples().
+        self._disk_index = None
 
         if leave_waveforms_on_disk:
             leave_on_disk_keys = ["polarizations"]
@@ -277,10 +280,13 @@ class WaveformDataset(DingoDataset, torch.utils.data.Dataset):
                 # Open hdf5 file
                 self.file_handle = h5py.File(self.file_name, "r")
 
+            disk_idx = batched_idx
+            if self._disk_index is not None:
+                disk_idx = self._disk_index[np.asarray(batched_idx)].tolist()
             polarizations = recursive_hdf5_load(
                 self.file_handle,
                 keys=self._leave_on_disk_keys,
-                idx=batched_idx,
+                idx=disk_idx,
                 dtype_map=self.dtype_map,
             )["polarizations"]
             # Apply domain update to set waveform to zero for f < f_min
@@ -348,6 +354,25 @@ class WaveformDataset(DingoDataset, torch.utils.data.Dataset):
         # Close hdf5 file when wfd is deleted
         if self.file_handle is not None:
             self.file_handle.close()
+
+    def select_samples(self, indices) -> None:
+        """
+        Restrict the dataset in place to the given (increasing) sample indices.
+
+        Works both for waveforms held in memory and for waveforms left on disk (in
+        which case an index map into the HDF5 file is kept).
+        """
+        indices = np.unique(np.asarray(indices, dtype=np.int64))
+        self.parameters = self.parameters.iloc[indices].reset_index(drop=True)
+        if "polarizations" in self._leave_on_disk_keys:
+            if self._disk_index is None:
+                self._disk_index = indices
+            else:
+                self._disk_index = self._disk_index[indices]
+        else:
+            self.polarizations = {
+                k: v[indices] for k, v in self.polarizations.items()
+            }
 
     def parameter_mean_std(self):
         mean = self.parameters.mean().to_dict()

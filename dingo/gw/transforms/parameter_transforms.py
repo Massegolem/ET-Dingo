@@ -2,24 +2,49 @@ import numpy as np
 import torch
 import pandas as pd
 from dingo.gw.prior import BBHExtrinsicPriorDict
+from dingo.gw.source_frame import SourceFrameMassConstraints
 from .utils import get_batch_size_of_input_sample
 
 
 class SampleExtrinsicParameters(object):
     """
     Sample extrinsic parameters and add them to sample in a separate dictionary.
+
+    If source_frame_mass_constraints is given, the luminosity distance is drawn from
+    its prior truncated to the range in which the source-frame masses of the
+    (detector-frame) intrinsic parameters satisfy the constraints. Combined with the
+    thinning of the waveform dataset in build_dataset(), this samples exactly from the
+    constrained joint prior.
     """
 
-    def __init__(self, extrinsic_prior_dict):
+    def __init__(self, extrinsic_prior_dict, source_frame_mass_constraints=None):
         self.extrinsic_prior_dict = extrinsic_prior_dict
         self.prior = BBHExtrinsicPriorDict(extrinsic_prior_dict)
+        self.source_frame_mass_constraints = source_frame_mass_constraints
+        self.source_frame = None
+        if source_frame_mass_constraints:
+            if "luminosity_distance" not in self.prior:
+                raise ValueError(
+                    "source_frame_mass_constraints require luminosity_distance in the "
+                    "extrinsic prior."
+                )
+            self.source_frame = SourceFrameMassConstraints.from_settings(
+                source_frame_mass_constraints,
+                max_distance=self.prior["luminosity_distance"].maximum,
+            )
 
     def __call__(self, input_sample):
         sample = input_sample.copy()
         batched, batch_size = get_batch_size_of_input_sample(input_sample)
         extrinsic_parameters = self.prior.sample(batch_size if batched else None)
+        if self.source_frame is not None:
+            extrinsic_parameters["luminosity_distance"] = (
+                self.source_frame.sample_distance(
+                    self.prior["luminosity_distance"], input_sample["parameters"]
+                )
+            )
         extrinsic_parameters = {
-            k: v.astype(np.float32) if batched else float(v)
+            k: np.asarray(v).astype(np.float32) if batched else float(v)
             for k, v in extrinsic_parameters.items()
         }
         sample["extrinsic_parameters"] = extrinsic_parameters
@@ -27,7 +52,10 @@ class SampleExtrinsicParameters(object):
 
     @property
     def reproduction_dict(self):
-        return {"extrinsic_prior_dict": self.extrinsic_prior_dict}
+        return {
+            "extrinsic_prior_dict": self.extrinsic_prior_dict,
+            "source_frame_mass_constraints": self.source_frame_mass_constraints,
+        }
 
 
 class SelectStandardizeRepackageParameters(object):

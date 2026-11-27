@@ -524,7 +524,8 @@ class GWSamplerContext:
             intrinsic_prior = self.model_metadata["dataset_settings"]["intrinsic_prior"]
             extrinsic_prior = get_extrinsic_prior_dict(data_settings["extrinsic_prior"])
             self._prior = build_prior_with_defaults(
-                {**intrinsic_prior, **extrinsic_prior}
+                {**intrinsic_prior, **extrinsic_prior},
+                data_settings.get("source_frame_mass_constraints"),
             )
         return self._prior
 

@@ -74,7 +74,11 @@ def get_mismatch(a, b, domain, asd_file=None):
 
 
 def get_standardization_dict(
-    extrinsic_prior_dict, wfd, selected_parameters, transform=None
+    extrinsic_prior_dict,
+    wfd,
+    selected_parameters,
+    transform=None,
+    numerical_parameters=(),
 ):
     """
     Calculates the mean and standard deviation of parameters. This is needed for
@@ -90,6 +94,10 @@ def get_standardization_dict(
         Operator that will generate samples for parameters contained in
         selected_parameters that are not contained in the intrinsic or extrinsic prior.
         (E.g., H1_time, L1_time_proxy)
+    numerical_parameters : list[str]
+        Extrinsic parameters whose distribution at train time differs from their
+        prior (e.g. luminosity_distance under source-frame mass constraints). Their
+        mean and standard deviation are estimated by sampling through the transform.
 
     Returns
     -------
@@ -119,6 +127,9 @@ def get_standardization_dict(
     # luminosity_distance) in intrinsic parameters by the extrinsic ones
     mean = {**mean_intrinsic, **mean_extrinsic}
     std = {**std_intrinsic, **std_extrinsic}
+    for p in numerical_parameters:
+        mean.pop(p, None)
+        std.pop(p, None)
 
     # For all remaining parameters that require standardization, we use the transform
     # to sample these and estimate the mean and standard deviation numerically.

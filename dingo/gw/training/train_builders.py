@@ -12,7 +12,8 @@ from dingo.gw.dataset.waveform_dataset import WaveformDataset
 from dingo.gw.domains import build_domain
 from dingo.gw.gwutils import *
 from dingo.gw.noise.asd_dataset import ASDDataset
-from dingo.gw.prior import default_inference_parameters
+from dingo.gw.prior import BBHExtrinsicPriorDict, default_inference_parameters
+from dingo.gw.source_frame import SourceFrameMassConstraints
 from dingo.gw.SVD import SVDBasis
 from dingo.gw.transforms import (
     AddWhiteNoiseComplex,
@@ -68,7 +69,48 @@ def build_dataset(
         svd_size_update=data_settings.get("svd_size_update"),
         leave_waveforms_on_disk=leave_waveforms_on_disk,
     )
+    if data_settings.get("source_frame_mass_constraints"):
+        apply_source_frame_mass_constraints(wfd, data_settings)
     return wfd
+
+
+def apply_source_frame_mass_constraints(
+    wfd: WaveformDataset, data_settings: dict, seed: int = 0
+) -> None:
+    """
+    Thin the waveform dataset (in place) so that, combined with drawing the
+    luminosity distance from its truncated prior at train time
+    (SampleExtrinsicParameters), training samples follow the constrained prior
+
+        p(intrinsic) p(d) 1[source-frame masses within bounds] / Z.
+
+    Each waveform is kept with probability P(d allowed | detector-frame masses) under
+    the extrinsic luminosity_distance prior. A fixed seed makes the selection
+    reproducible, so that resumed runs (and the train/test split) see the same data.
+    """
+    extrinsic_prior = BBHExtrinsicPriorDict(
+        get_extrinsic_prior_dict(data_settings["extrinsic_prior"])
+    )
+    distance_prior = extrinsic_prior["luminosity_distance"]
+    source_frame = SourceFrameMassConstraints.from_settings(
+        data_settings["source_frame_mass_constraints"],
+        max_distance=distance_prior.maximum,
+    )
+    acceptance = source_frame.acceptance_probability(distance_prior, wfd.parameters)
+    rng = np.random.default_rng(seed)
+    keep = np.flatnonzero(rng.uniform(size=len(acceptance)) < acceptance)
+    if len(keep) == 0:
+        raise ValueError(
+            "No waveforms are compatible with source_frame_mass_constraints and the "
+            "luminosity_distance prior."
+        )
+    print(
+        f"Source-frame mass constraints {source_frame.to_settings()}: keeping "
+        f"{len(keep)} of {len(acceptance)} waveforms (mean acceptance "
+        f"{acceptance.mean():.3f}; {np.mean(acceptance == 0):.3f} of the dataset "
+        f"cannot satisfy the constraints at any allowed distance)."
+    )
+    wfd.select_samples(keep)
 
 
 def set_train_transforms(
@@ -129,8 +171,9 @@ def set_train_transforms(
     ref_time = data_settings["ref_time"]
 
     # Build transforms.
+    source_frame_mass_constraints = data_settings.get("source_frame_mass_constraints")
     transforms = [
-        SampleExtrinsicParameters(extrinsic_prior_dict),
+        SampleExtrinsicParameters(extrinsic_prior_dict, source_frame_mass_constraints),
         GetDetectorTimes(ifo_list, ref_time),
     ]
 
@@ -195,6 +238,11 @@ def set_train_transforms(
             wfd,
             data_settings["inference_parameters"] + data_settings["context_parameters"],
             torchvision.transforms.Compose(transforms),
+            # The constrained distance distribution differs from its prior, so
+            # estimate it by sampling through the transforms.
+            numerical_parameters=(
+                ["luminosity_distance"] if source_frame_mass_constraints else []
+            ),
         )
         data_settings["standardization"] = standardization_dict
 

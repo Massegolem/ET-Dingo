@@ -421,7 +421,10 @@ class Injection(GWSignal):
         extrinsic_prior = get_extrinsic_prior_dict(
             metadata["train_settings"]["data"]["extrinsic_prior"]
         )
-        prior = build_prior_with_defaults({**intrinsic_prior, **extrinsic_prior})
+        prior = build_prior_with_defaults(
+            {**intrinsic_prior, **extrinsic_prior},
+            metadata["train_settings"]["data"].get("source_frame_mass_constraints"),
+        )
 
         return cls(
             prior=prior,
